@@ -36,6 +36,10 @@ create table if not exists answers (
 );
 create index if not exists answers_user_category_item_idx on answers (user_id, category_id, item);
 create index if not exists answers_attempt_idx on answers (attempt_id);
+create table if not exists preferences (
+  user_id integer primary key references users(id) on delete cascade,
+  pinned_order text not null default '[]'
+);
 `
 
 async function initDb(): Promise<Db> {

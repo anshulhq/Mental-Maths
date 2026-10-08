@@ -1,6 +1,6 @@
 import { and, avg, count, desc, eq, gte, sql, sum } from 'drizzle-orm'
 import { getDb } from '@/db'
-import { answers, attempts } from '@/db/schema'
+import { answers, attempts, preferences } from '@/db/schema'
 import type { ItemStats } from './categories'
 
 export type DayRow = { date: string; tests: number; questions: number; correct: number }
@@ -141,5 +141,19 @@ export async function getOverallStats(userId: number) {
     questions: num(r?.questions),
     correct: num(r?.correct),
     days: num(r?.days),
+  }
+}
+
+export async function getPinnedOrder(userId: number): Promise<string[]> {
+  try {
+    const rows = await getDb().then((db) =>
+      db.select({ pinnedOrder: preferences.pinnedOrder }).from(preferences).where(eq(preferences.userId, userId)).limit(1),
+    )
+    const raw = rows[0]?.pinnedOrder
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : []
+  } catch {
+    return []
   }
 }

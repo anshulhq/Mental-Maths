@@ -50,3 +50,10 @@ export const answers = pgTable(
     index('answers_attempt_idx').on(t.attemptId),
   ],
 )
+
+export const preferences = pgTable('preferences', {
+  userId: integer('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  pinnedOrder: text('pinned_order').notNull().default('[]'),
+})

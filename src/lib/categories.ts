@@ -27,7 +27,7 @@ const range = (from: number, to: number) => Array.from({ length: to - from + 1 }
 const squares: CategoryDef = {
   id: 'squares-1-25',
   name: 'Squares 1–25',
-  tagline: 'n² for every number from 1 to 30',
+  tagline: 'n² for every number from 1 to 25',
   items: range(1, 25),
   label: (n) => `${n}²`,
   question: (n) => `${n}²`,
