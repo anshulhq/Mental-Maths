@@ -25,10 +25,10 @@ export const TROUBLE_CAP = 25
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => String(from + i))
 
 const squares: CategoryDef = {
-  id: 'squares-1-30',
-  name: 'Squares 1–30',
+  id: 'squares-1-25',
+  name: 'Squares 1–25',
   tagline: 'n² for every number from 1 to 30',
-  items: range(1, 30),
+  items: range(1, 25),
   label: (n) => `${n}²`,
   question: (n) => `${n}²`,
   answer: (n) => Number(n) ** 2,
