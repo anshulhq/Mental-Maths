@@ -4,7 +4,7 @@ A fast, keyboard-first mental maths trainer for SSC CGL prep. Squares, cubes, ta
 
 ## Features
 
-- **Test categories** — Squares 1–30 / 1–100 / 1–300, Squares ending in 5 (up to 125²), Squares 101–1000 (random 10/20/30), Square roots 2-digit & 1–300, Cube roots 1–300 (random), 50 − n, 100 − n, Borrow subtraction (16−9 style, every units-digit pair), Carry addition (16+9 style, every units-digit pair), Cubes 1–15, Tables 2–25 ×10 (each table up to ×10, big-first like 25 × 10), Fractions → % (add your own in `src/lib/categories.ts`)
+- **Test categories** — Squares 1–30 / 1–100 / 1–300, Squares ending in 5 (up to 125²), Squares 101–1000 (random 10/20/30), Square roots 2-digit & 1–300, Cube roots 1–300 (random), 50 − n, 100 − n, Borrow subtraction (16−9 style, every units-digit pair), Carry addition (16+9 style, every units-digit pair), Addition facts 1–9 (all 81 single-digit pairs), Cubes 1–15, Tables 2–25 ×10 (each table up to ×10, big-first like 25 × 10), Fractions → % (add your own in `src/lib/categories.ts`)
 - **Full test** — every item, jumbled
 - **Quick test** — 20 random items
 - **Trouble drill** — automatically drills the items you keep getting wrong (accuracy < 80%)

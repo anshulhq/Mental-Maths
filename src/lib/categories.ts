@@ -200,6 +200,31 @@ const carryAdd: CategoryDef = {
   tolerance: 0,
 }
 
+const addFactItems: string[] = []
+for (let a = 1; a <= 9; a++) {
+  for (let b = 1; b <= 9; b++) addFactItems.push(`${a}x${b}`)
+}
+
+const addFacts: CategoryDef = {
+  id: 'add-facts',
+  name: 'Addition facts 1–9',
+  tagline: 'All 81 single-digit + single-digit pairs',
+  items: addFactItems,
+  label: (item) => {
+    const [a, b] = item.split('x')
+    return `${a}+${b}`
+  },
+  question: (item) => {
+    const [a, b] = item.split('x')
+    return `${a} + ${b}`
+  },
+  answer: (item) => {
+    const [a, b] = item.split('x').map(Number)
+    return a + b
+  },
+  tolerance: 0,
+}
+
 const subtract50 = subtractFrom(50, 50)
 const subtract100 = subtractFrom(100, 100)
 
@@ -249,7 +274,7 @@ const fractions: CategoryDef = {
   hint: 'answer in % — 1 or 2 decimals',
 }
 
-export const categories: readonly CategoryDef[] = [squares, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, cubes, tables, fractions]
+export const categories: readonly CategoryDef[] = [squares, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, addFacts, cubes, tables, fractions]
 
 export function getCategory(id: string | undefined): CategoryDef | undefined {
   return categories.find((c) => c.id === id)
