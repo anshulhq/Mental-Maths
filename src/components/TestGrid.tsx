@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export type CardVM = {
   id: string
@@ -53,6 +53,15 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
   const [ghost, setGhost] = useState<Ghost | null>(null)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const dragRef = useRef<DragInfo | null>(null)
+  const movedRef = useRef(false)
+  const cleanupRef = useRef<(() => void) | null>(null)
+  const pinnedRef = useRef(pinned)
+
+  useEffect(() => {
+    pinnedRef.current = pinned
+  }, [pinned])
+
+  useEffect(() => () => cleanupRef.current?.(), [])
 
   const pinnedSet = new Set(pinned)
   const pinnedCards = pinned.map((id) => cards.find((c) => c.id === id)).filter((c): c is CardVM => !!c)
@@ -78,45 +87,57 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
     void savePinned(next)
   }
 
+  function endDrag() {
+    cleanupRef.current?.()
+    cleanupRef.current = null
+    const wasDragging = dragRef.current !== null
+    const shouldSave = wasDragging && movedRef.current
+    dragRef.current = null
+    movedRef.current = false
+    setGhost(null)
+    if (shouldSave) void savePinned(pinnedRef.current)
+  }
+
   function onHandleDown(e: React.PointerEvent<HTMLSpanElement>, id: string) {
     if (e.pointerType === 'mouse' && e.button !== 0) return
     const cardEl = e.currentTarget.closest('[data-card-id]') as HTMLElement | null
     if (!cardEl) return
+    e.preventDefault()
     const rect = cardEl.getBoundingClientRect()
     dragRef.current = { id, w: rect.width, offX: e.clientX - rect.left, offY: e.clientY - rect.top }
+    movedRef.current = false
     setGhost({ id, x: rect.left, y: rect.top, w: rect.width })
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId)
-    } catch {
-      return
+
+    const move = (ev: PointerEvent) => {
+      const d = dragRef.current
+      if (!d) return
+      movedRef.current = true
+      setGhost((g) => (g ? { ...g, x: ev.clientX - d.offX, y: ev.clientY - d.offY } : g))
+      const el = document.elementFromPoint(ev.clientX, ev.clientY)
+      const overCard = el?.closest('[data-card-id]') as HTMLElement | null
+      const overId = overCard?.getAttribute('data-card-id')
+      if (!overId || overId === d.id) return
+      setPinned((prev) => {
+        const from = prev.indexOf(d.id)
+        const to = prev.indexOf(overId)
+        if (from === -1 || to === -1) return prev
+        const arr = [...prev]
+        arr.splice(from, 1)
+        arr.splice(to, 0, d.id)
+        return arr
+      })
     }
-  }
 
-  function onHandleMove(e: React.PointerEvent<HTMLSpanElement>) {
-    const d = dragRef.current
-    if (!d) return
-    setGhost((g) => (g ? { ...g, x: e.clientX - d.offX, y: e.clientY - d.offY } : g))
-
-    const el = document.elementFromPoint(e.clientX, e.clientY)
-    const overCard = el?.closest('[data-card-id]') as HTMLElement | null
-    const overId = overCard?.getAttribute('data-card-id')
-    if (!overId || overId === d.id) return
-    setPinned((prev) => {
-      const from = prev.indexOf(d.id)
-      const to = prev.indexOf(overId)
-      if (from === -1 || to === -1) return prev
-      const arr = [...prev]
-      arr.splice(from, 1)
-      arr.splice(to, 0, d.id)
-      return arr
-    })
-  }
-
-  function onHandleUp() {
-    const wasDragging = dragRef.current !== null
-    dragRef.current = null
-    setGhost(null)
-    if (wasDragging) void savePinned(pinned)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', endDrag)
+    window.addEventListener('pointercancel', endDrag)
+    window.addEventListener('blur', endDrag)
+    cleanupRef.current = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', endDrag)
+      window.removeEventListener('pointercancel', endDrag)
+      window.removeEventListener('blur', endDrag)
+    }
   }
 
   function cardInner(c: CardVM, isPinned: boolean, interactive: boolean) {
@@ -129,11 +150,8 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
               (interactive ? (
                 <span
                   onPointerDown={(e) => onHandleDown(e, c.id)}
-                  onPointerMove={onHandleMove}
-                  onPointerUp={onHandleUp}
-                  onPointerCancel={onHandleUp}
                   title="Drag to reorder"
-                  className="mt-0.5 shrink-0 cursor-grab touch-none text-faint active:cursor-grabbing"
+                  className="mt-0.5 shrink-0 cursor-grab touch-none select-none text-faint active:cursor-grabbing"
                 >
                   {GripIcon}
                 </span>
