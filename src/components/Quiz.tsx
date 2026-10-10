@@ -33,6 +33,7 @@ const FLASH_WRONG_MS = 1000
 function modeLabel(mode: TestMode, count: number, disableFull?: boolean): string {
   if (mode === 'full') return 'Full test'
   if (mode === 'trouble') return 'Trouble drill'
+  if (mode === 'tricky') return 'Tricky drill'
   return disableFull ? `Random ${count}` : 'Quick test'
 }
 
@@ -137,6 +138,7 @@ export default function Quiz({
         if (e.key === '1') start('full')
         else if (e.key === '2') start('quick')
         else if (e.key === '3') start('trouble')
+        else if (e.key === '4' && cat.isTricky) start('tricky')
       }
     }
     window.addEventListener('keydown', onKey)
@@ -329,7 +331,7 @@ export default function Quiz({
             </button>
           </div>
         ) : (
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className={`mt-5 grid gap-3 sm:grid-cols-2 ${cat.isTricky ? 'lg:grid-cols-4' : 'sm:grid-cols-3'}`}>
             <button
               onClick={() => start('full')}
               className="rounded-lg border border-border p-4 text-left transition-colors hover:border-ink hover:bg-subtle"
@@ -363,6 +365,18 @@ export default function Quiz({
                 {troubleCount > 0 ? `${troubleCount} weak item${troubleCount === 1 ? '' : 's'} you keep missing.` : 'No weak items yet — take a test first.'}
               </p>
             </button>
+            {cat.isTricky && (
+              <button
+                onClick={() => start('tricky')}
+                className="rounded-lg border border-warnbg bg-warnbg/40 p-4 text-left transition-colors hover:border-warnink"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-warnink">Tricky drill</span>
+                  <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">4</kbd>
+                </div>
+                <p className="mt-1 text-xs text-muted">Only the {cat.items.filter(cat.isTricky).length} carry facts — sums of 10 or more.</p>
+              </button>
+            )}
           </div>
         )}
 

@@ -29,6 +29,7 @@ export default async function HomePage() {
       acc: summary ? fmtRatio(summary.correct, summary.questions) : null,
       mastered: mastery.mastered,
       troubleCount: troubleItems(cat, stats).length,
+      trickyCount: cat.isTricky ? cat.items.filter(cat.isTricky).length : 0,
     }
   })
 

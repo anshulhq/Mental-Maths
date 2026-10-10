@@ -7,7 +7,7 @@ import { getCategory } from '@/lib/categories'
 
 const payloadSchema = z.object({
   categoryId: z.string().min(1),
-  mode: z.enum(['full', 'quick', 'trouble']),
+  mode: z.enum(['full', 'quick', 'trouble', 'tricky']),
   durationMs: z.number().int().min(0).max(43_200_000),
   completed: z.boolean(),
   localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

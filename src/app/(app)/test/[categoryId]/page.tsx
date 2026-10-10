@@ -22,7 +22,7 @@ export default async function TestPage(props: PageProps<'/test/[categoryId]'>) {
 
   const search = await props.searchParams
   const initialMode =
-    typeof search.mode === 'string' && ['full', 'quick', 'trouble'].includes(search.mode) ? (search.mode as TestMode) : undefined
+    typeof search.mode === 'string' && ['full', 'quick', 'trouble', 'tricky'].includes(search.mode) ? (search.mode as TestMode) : undefined
   const rawN = Array.isArray(search.n) ? search.n[0] : search.n
   const nParam = Number(rawN)
   const initialCount = Number.isInteger(nParam) && nParam >= 5 && nParam <= 100 ? nParam : undefined

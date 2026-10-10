@@ -14,6 +14,7 @@ export type CardVM = {
   acc: string | null
   mastered: number
   troubleCount: number
+  trickyCount: number
 }
 
 type DragInfo = { id: string; w: number; offX: number; offY: number }
@@ -225,7 +226,7 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
             )}
           </>
         ) : (
-          <div className="mt-4 grid grid-cols-3 gap-2 self-end text-xs sm:text-sm">
+          <div className={`mt-4 grid gap-2 self-end text-xs sm:text-sm ${c.trickyCount > 0 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
             <Link
               href={`/test/${c.id}?mode=full`}
               className="rounded-lg bg-primary px-2 py-2 text-center font-medium text-onprimary transition-opacity hover:opacity-85 sm:px-3"
@@ -238,6 +239,14 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
             >
               Quick · {c.lengths[0]}
             </Link>
+            {c.trickyCount > 0 && (
+              <Link
+                href={`/test/${c.id}?mode=tricky`}
+                className="rounded-lg border border-warnbg bg-warnbg px-2 py-2 text-center font-medium text-warnink transition-colors hover:border-warnink sm:px-3"
+              >
+                Tricky · {c.trickyCount}
+              </Link>
+            )}
             {c.troubleCount > 0 ? (
               <Link
                 href={`/test/${c.id}?mode=trouble`}

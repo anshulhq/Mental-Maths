@@ -1,4 +1,4 @@
-export type TestMode = 'full' | 'quick' | 'trouble'
+export type TestMode = 'full' | 'quick' | 'trouble' | 'tricky'
 
 export type ItemStat = { attempts: number; correct: number }
 export type ItemStats = Record<string, ItemStat>
@@ -16,6 +16,7 @@ export type CategoryDef = {
   disableFull?: boolean
   quickLengths?: readonly number[]
   answerFor?: (questionText: string) => number
+  isTricky?: (item: string) => boolean
 }
 
 export const QUICK_LENGTH = 20
@@ -32,6 +33,17 @@ const squares: CategoryDef = {
   label: (n) => `${n}²`,
   question: (n) => `${n}²`,
   answer: (n) => Number(n) ** 2,
+  tolerance: 0,
+}
+
+const reverseSquares25: CategoryDef = {
+  id: 'reverse-squares-1-25',
+  name: 'Reverse squares 1–25',
+  tagline: 'Given the square, name the number — 625 = ?²',
+  items: range(1, 25),
+  label: (n) => `${Number(n) ** 2}=?²`,
+  question: (n) => `${Number(n) ** 2} = ?²`,
+  answer: (n) => Number(n),
   tolerance: 0,
 }
 
@@ -223,6 +235,10 @@ const addFacts: CategoryDef = {
     return a + b
   },
   tolerance: 0,
+  isTricky: (item) => {
+    const [a, b] = item.split('x').map(Number)
+    return a + b >= 10
+  },
 }
 
 const subtract50 = subtractFrom(50, 50)
@@ -274,7 +290,7 @@ const fractions: CategoryDef = {
   hint: 'answer in % — 1 or 2 decimals',
 }
 
-export const categories: readonly CategoryDef[] = [squares, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, addFacts, cubes, tables, fractions]
+export const categories: readonly CategoryDef[] = [squares, reverseSquares25, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, addFacts, cubes, tables, fractions]
 
 export function getCategory(id: string | undefined): CategoryDef | undefined {
   return categories.find((c) => c.id === id)
@@ -345,6 +361,10 @@ export function buildQuestions(
   count?: number,
 ): { items: string[]; note?: string } {
   if (mode === 'full') return { items: shuffle(cat.items) }
+  if (mode === 'tricky') {
+    if (!cat.isTricky) return { items: shuffle(cat.items) }
+    return { items: shuffle(cat.items.filter((item) => cat.isTricky!(item))) }
+  }
   if (mode === 'quick') {
     const length = Math.min(count ?? defaultQuickLength(cat), cat.items.length)
     return { items: shuffle(cat.items).slice(0, length) }
