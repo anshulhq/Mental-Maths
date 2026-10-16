@@ -15,6 +15,7 @@ export type CardVM = {
   mastered: number
   troubleCount: number
   trickyCount: number
+  singleTable: { min: number; max: number } | null
 }
 
 type DragInfo = { id: string; w: number; offX: number; offY: number }
@@ -53,6 +54,7 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
   const [pinned, setPinned] = useState<string[]>(initialPinned.filter((id) => validIds.has(id)))
   const [ghost, setGhost] = useState<Ghost | null>(null)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [openTable, setOpenTable] = useState<string | null>(null)
   const dragRef = useRef<DragInfo | null>(null)
   const movedRef = useRef(false)
   const cleanupRef = useRef<(() => void) | null>(null)
@@ -226,7 +228,11 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
             )}
           </>
         ) : (
-          <div className={`mt-4 grid gap-2 self-end text-xs sm:text-sm ${c.trickyCount > 0 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+          <div
+            className={`mt-4 grid gap-2 self-end text-xs sm:text-sm ${
+              c.trickyCount > 0 || c.singleTable ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'
+            }`}
+          >
             <Link
               href={`/test/${c.id}?mode=full`}
               className="rounded-lg bg-primary px-2 py-2 text-center font-medium text-onprimary transition-opacity hover:opacity-85 sm:px-3"
@@ -239,6 +245,35 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
             >
               Quick · {c.lengths[0]}
             </Link>
+            {c.singleTable && (
+              <div className="relative">
+                <button
+                  onClick={() => setOpenTable(openTable === c.id ? null : c.id)}
+                  className="w-full rounded-lg border border-strong px-2 py-2 text-center font-medium transition-colors hover:border-ink sm:px-3"
+                >
+                  Table ▾
+                </button>
+                {openTable === c.id && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setOpenTable(null)} />
+                    <div className="absolute bottom-full left-1/2 z-20 mb-2 w-56 -translate-x-1/2 rounded-lg border border-border bg-surface p-2 shadow-xl">
+                      <p className="mb-1.5 px-1 text-[10px] text-muted">Pick a table — starts instantly</p>
+                      <div className="grid grid-cols-5 gap-1">
+                        {Array.from({ length: c.singleTable.max - c.singleTable.min + 1 }, (_, i) => c.singleTable!.min + i).map((t) => (
+                          <Link
+                            key={t}
+                            href={`/test/${c.id}?mode=single&n=${t}`}
+                            className="rounded-md border border-border py-1.5 text-center font-mono text-sm transition-colors hover:border-ink hover:bg-subtle"
+                          >
+                            {t}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             {c.trickyCount > 0 && (
               <Link
                 href={`/test/${c.id}?mode=tricky`}

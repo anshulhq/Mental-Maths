@@ -30,6 +30,7 @@ export default async function HomePage() {
       mastered: mastery.mastered,
       troubleCount: troubleItems(cat, stats).length,
       trickyCount: cat.isTricky ? cat.items.filter(cat.isTricky).length : 0,
+      singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max } : null,
     }
   })
 

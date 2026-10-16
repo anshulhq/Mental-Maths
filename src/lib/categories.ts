@@ -190,7 +190,7 @@ for (let u = 1; u <= 9; u++) {
 
 const carryAdd: CategoryDef = {
   id: 'carry-add',
-  name: 'Carry addition',
+  name: 'Carry addition 2-digits + 1-digit',
   tagline: '2-digit + 1-digit needing a carry (16 + 9, 25 + 7 …)',
   items: carryItems,
   label: (item) => {
@@ -205,6 +205,32 @@ const carryAdd: CategoryDef = {
   answer: (item) => {
     const [u, a] = item.split('x').map(Number)
     return 10 + u + a
+  },
+  answerFor: (text) => {
+    const m = text.match(/^(\d+)\s*\+\s*(\d+)$/)
+    return m ? Number(m[1]) + Number(m[2]) : Number.NaN
+  },
+  tolerance: 0,
+}
+
+const carryAdd22: CategoryDef = {
+  id: 'carry-add-2-2',
+  name: 'Carry addition 2-digits + 2-digits',
+  tagline: '2-digit + 2-digit needing a carry (47 + 38, 26 + 59 …)',
+  items: carryItems,
+  label: (item) => {
+    const [u, a] = item.split('x')
+    return `${u}+${a}`
+  },
+  question: (item) => {
+    const [u, a] = item.split('x').map(Number)
+    const tens1 = 1 + Math.floor(Math.random() * 9)
+    const tens2 = 1 + Math.floor(Math.random() * 9)
+    return `${tens1 * 10 + u} + ${tens2 * 10 + a}`
+  },
+  answer: (item) => {
+    const [u, a] = item.split('x').map(Number)
+    return 20 + u + a
   },
   answerFor: (text) => {
     const m = text.match(/^(\d+)\s*\+\s*(\d+)$/)
@@ -299,7 +325,7 @@ const fractions: CategoryDef = {
   hint: 'answer in % — 1 or 2 decimals',
 }
 
-export const categories: readonly CategoryDef[] = [squares, reverseSquares25, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, addFacts, cubes, tables, fractions]
+export const categories: readonly CategoryDef[] = [squares, reverseSquares25, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, carryAdd22, addFacts, cubes, tables, fractions]
 
 export function getCategory(id: string | undefined): CategoryDef | undefined {
   return categories.find((c) => c.id === id)
