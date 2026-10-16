@@ -1,4 +1,4 @@
-export type TestMode = 'full' | 'quick' | 'trouble' | 'tricky'
+export type TestMode = 'full' | 'quick' | 'trouble' | 'tricky' | 'single'
 
 export type ItemStat = { attempts: number; correct: number }
 export type ItemStats = Record<string, ItemStat>
@@ -17,6 +17,7 @@ export type CategoryDef = {
   quickLengths?: readonly number[]
   answerFor?: (questionText: string) => number
   isTricky?: (item: string) => boolean
+  singleTable?: { min: number; max: number; matches: (item: string, table: number) => boolean }
 }
 
 export const QUICK_LENGTH = 20
@@ -268,6 +269,14 @@ const tables: CategoryDef = {
     return lo * hi
   },
   tolerance: 0,
+  singleTable: {
+    min: 2,
+    max: 25,
+    matches: (item, table) => {
+      const [lo, hi] = item.split('x').map(Number)
+      return hi === table || (lo === table && hi <= 10)
+    },
+  },
 }
 
 const fractionItems = [
@@ -358,15 +367,24 @@ export function buildQuestions(
   cat: CategoryDef,
   mode: TestMode,
   stats: ItemStats,
-  count?: number,
+  n?: number,
 ): { items: string[]; note?: string } {
   if (mode === 'full') return { items: shuffle(cat.items) }
   if (mode === 'tricky') {
     if (!cat.isTricky) return { items: shuffle(cat.items) }
     return { items: shuffle(cat.items.filter((item) => cat.isTricky!(item))) }
   }
+  if (mode === 'single') {
+    const spec = cat.singleTable
+    if (!spec) return { items: shuffle(cat.items) }
+    const table = n ?? spec.min
+    if (table < spec.min || table > spec.max) {
+      return { items: [], note: `Pick a table between ${spec.min} and ${spec.max}.` }
+    }
+    return { items: shuffle(cat.items.filter((item) => spec.matches(item, table))) }
+  }
   if (mode === 'quick') {
-    const length = Math.min(count ?? defaultQuickLength(cat), cat.items.length)
+    const length = Math.min(n ?? defaultQuickLength(cat), cat.items.length)
     return { items: shuffle(cat.items).slice(0, length) }
   }
   const troubled = troubleItems(cat, stats)

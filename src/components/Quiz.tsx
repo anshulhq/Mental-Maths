@@ -34,6 +34,7 @@ function modeLabel(mode: TestMode, count: number, disableFull?: boolean): string
   if (mode === 'full') return 'Full test'
   if (mode === 'trouble') return 'Trouble drill'
   if (mode === 'tricky') return 'Tricky drill'
+  if (mode === 'single') return `Table ${count}`
   return disableFull ? `Random ${count}` : 'Quick test'
 }
 
@@ -96,7 +97,7 @@ export default function Quiz({
       autoTimerRef.current = null
       setMenuNote(null)
       setMode(mode)
-      setCount(mode === 'quick' ? built.items.length : 0)
+      setCount(mode === 'quick' ? built.items.length : mode === 'single' ? (n ?? 0) : 0)
       setQuestions(built.items.map((item) => ({ item, text: cat.question(item) })))
       setResults([])
       setIndex(0)
@@ -380,6 +381,26 @@ export default function Quiz({
           </div>
         )}
 
+        {cat.singleTable && (
+          <div className="mt-5 rounded-lg border border-border p-4">
+            <span className="font-medium">Single table</span>
+            <p className="mt-1 text-xs text-muted">
+              Drill just one table, jumbled — {cat.singleTable.min} × 2 up to {cat.singleTable.max} × 10:
+            </p>
+            <div className="mt-3 grid grid-cols-8 gap-1.5 sm:grid-cols-12">
+              {Array.from({ length: cat.singleTable.max - cat.singleTable.min + 1 }, (_, i) => cat.singleTable!.min + i).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => start('single', t)}
+                  className="rounded-md border border-border py-1.5 text-center font-mono text-sm transition-colors hover:border-ink hover:bg-subtle"
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {menuNote && <p className="mt-4 rounded-lg bg-warnbg px-3 py-2 text-sm text-warnink">{menuNote}</p>}
       </div>
     )
@@ -539,7 +560,7 @@ export default function Quiz({
           </button>
         )}
         <button
-          onClick={() => start(mode, mode === 'quick' ? count : undefined)}
+          onClick={() => start(mode, mode === 'quick' || mode === 'single' ? count : undefined)}
           className="rounded-lg border border-strong px-4 py-2 text-sm font-medium transition-colors hover:border-ink"
         >
           Retake
