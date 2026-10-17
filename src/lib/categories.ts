@@ -278,7 +278,14 @@ for (let t = 2; t <= 25; t++) {
 }
 const tableItems = [...tableFacts]
 
-export const trickyTableFacts: readonly string[] = ['4x7', '4x6', '5x8', '5x9', '6x7', '6x8', '3x7', '3x8', '4x8', '4x9']
+export const trickyTableGroups: readonly (readonly [string, string])[] = [
+  ['4x7', '4x6'],
+  ['5x8', '5x9'],
+  ['6x7', '6x8'],
+  ['3x7', '3x8'],
+  ['4x8', '4x9'],
+]
+export const trickyTableFacts: readonly string[] = trickyTableGroups.flat()
 const trickyTableSet = new Set(trickyTableFacts)
 
 const tables: CategoryDef = {

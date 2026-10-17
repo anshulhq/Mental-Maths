@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { trickyTableFacts } from '@/lib/categories'
+import { trickyTableGroups } from '@/lib/categories'
 
 const TABLES = Array.from({ length: 24 }, (_, i) => i + 2)
 const ROWS = Array.from({ length: 10 }, (_, i) => i + 1)
@@ -64,18 +64,19 @@ export default function TablesPage() {
           </Link>
         </div>
         <p className="mt-0.5 text-xs text-muted">The ones you get wrong most often</p>
-        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-          {trickyTableFacts.map((fact) => {
-            const [lo, hi] = fact.split('x').map(Number)
-            return (
-              <p
-                key={fact}
-                className="rounded-md border border-warnbg bg-surface px-2 py-1.5 text-center font-mono text-sm tabular-nums"
-              >
-                {hi} × {lo} = <span className="font-semibold">{hi * lo}</span>
-              </p>
-            )
-          })}
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {trickyTableGroups.map((group, gi) => (
+            <div key={gi} className="grid grid-cols-2 gap-1.5 rounded-lg border border-warnbg bg-surface p-1.5">
+              {group.map((fact) => {
+                const [lo, hi] = fact.split('x').map(Number)
+                return (
+                  <p key={fact} className="rounded-md bg-warnbg/30 px-2 py-1.5 text-center font-mono text-sm tabular-nums">
+                    {hi} × {lo} = <span className="font-semibold">{hi * lo}</span>
+                  </p>
+                )
+              })}
+            </div>
+          ))}
         </div>
       </section>
     </div>
