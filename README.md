@@ -11,6 +11,7 @@ A fast, keyboard-first mental maths trainer for SSC CGL prep. Squares, cubes, ta
 - Instant feedback, per-question timing, end-of-test report with misses and slowest answers
 - GitHub-style practice heatmap, streaks, mastery bars, weakest-items view
 - Simple username/password auth, one account (or more) — data lives in Postgres
+- **Tables reference page** — read-only multiplication tables 2–25 with quick jump links and per-table practice shortcuts
 - Dark mode (toggle in the header, remembers your choice, follows system by default)
 
 ## Local development

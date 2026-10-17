@@ -39,11 +39,11 @@ const squares: CategoryDef = {
 
 const reverseSquares25: CategoryDef = {
   id: 'reverse-squares-1-25',
-  name: 'Reverse squares 1–25',
-  tagline: 'Given the square, name the number — 625 = ?²',
+  name: 'Square root 1–25',
+  tagline: '√ of perfect squares from 1² to 25²',
   items: range(1, 25),
-  label: (n) => `${Number(n) ** 2}=?²`,
-  question: (n) => `${Number(n) ** 2} = ?²`,
+  label: (n) => `√${Number(n) ** 2}`,
+  question: (n) => `√${Number(n) ** 2}`,
   answer: (n) => Number(n),
   tolerance: 0,
 }
