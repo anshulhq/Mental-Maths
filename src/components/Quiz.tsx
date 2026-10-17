@@ -138,8 +138,8 @@ export default function Quiz({
       } else {
         if (e.key === '1') start('full')
         else if (e.key === '2') start('quick')
-        else if (e.key === '3') start('trouble')
-        else if (e.key === '4' && cat.isTricky) start('tricky')
+        else if (e.key === '3') start(cat.disableTrouble ? 'tricky' : 'trouble')
+        else if (e.key === '4' && cat.isTricky && !cat.disableTrouble) start('tricky')
       }
     }
     window.addEventListener('keydown', onKey)
@@ -353,19 +353,21 @@ export default function Quiz({
               </div>
               <p className="mt-1 text-xs text-muted">{quickLength} random items. Fast daily drill.</p>
             </button>
-            <button
-              onClick={() => start('trouble')}
-              disabled={troubleCount === 0}
-              className="rounded-lg border border-border p-4 text-left transition-colors enabled:hover:border-ink enabled:hover:bg-subtle disabled:opacity-45"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Trouble drill</span>
-                <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">3</kbd>
-              </div>
-              <p className="mt-1 text-xs text-muted">
-                {troubleCount > 0 ? `${troubleCount} weak item${troubleCount === 1 ? '' : 's'} you keep missing.` : 'No weak items yet — take a test first.'}
-              </p>
-            </button>
+            {!cat.disableTrouble && (
+              <button
+                onClick={() => start('trouble')}
+                disabled={troubleCount === 0}
+                className="rounded-lg border border-border p-4 text-left transition-colors enabled:hover:border-ink enabled:hover:bg-subtle disabled:opacity-45"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Trouble drill</span>
+                  <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">3</kbd>
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  {troubleCount > 0 ? `${troubleCount} weak item${troubleCount === 1 ? '' : 's'} you keep missing.` : 'No weak items yet — take a test first.'}
+                </p>
+              </button>
+            )}
             {cat.isTricky && (
               <button
                 onClick={() => start('tricky')}
@@ -373,9 +375,11 @@ export default function Quiz({
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-warnink">Tricky drill</span>
-                  <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">4</kbd>
+                  <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">
+                    {cat.disableTrouble ? '3' : '4'}
+                  </kbd>
                 </div>
-                <p className="mt-1 text-xs text-muted">Only the {cat.items.filter(cat.isTricky).length} carry facts — sums of 10 or more.</p>
+                <p className="mt-1 text-xs text-muted">Only the {cat.items.filter(cat.isTricky).length} tricky facts — the ones that catch you out.</p>
               </button>
             )}
           </div>

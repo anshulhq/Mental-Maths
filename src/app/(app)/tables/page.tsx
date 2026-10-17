@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { trickyTableFacts } from '@/lib/categories'
 
 const TABLES = Array.from({ length: 24 }, (_, i) => i + 2)
 const ROWS = Array.from({ length: 10 }, (_, i) => i + 1)
@@ -51,6 +52,32 @@ export default function TablesPage() {
           </section>
         ))}
       </div>
+
+      <section className="rounded-xl border border-warnbg bg-warnbg/30 p-4 sm:p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-warnink">Tricky facts</h2>
+          <Link
+            href="/test/tables-2-20?mode=tricky"
+            className="text-xs font-medium text-accent transition-opacity hover:opacity-75"
+          >
+            drill them →
+          </Link>
+        </div>
+        <p className="mt-0.5 text-xs text-muted">The ones you get wrong most often</p>
+        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+          {trickyTableFacts.map((fact) => {
+            const [lo, hi] = fact.split('x').map(Number)
+            return (
+              <p
+                key={fact}
+                className="rounded-md border border-warnbg bg-surface px-2 py-1.5 text-center font-mono text-sm tabular-nums"
+              >
+                {hi} × {lo} = <span className="font-semibold">{hi * lo}</span>
+              </p>
+            )
+          })}
+        </div>
+      </section>
     </div>
   )
 }

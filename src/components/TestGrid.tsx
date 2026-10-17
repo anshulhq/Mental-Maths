@@ -16,6 +16,7 @@ export type CardVM = {
   troubleCount: number
   trickyCount: number
   singleTable: { min: number; max: number } | null
+  disableTrouble: boolean
 }
 
 type DragInfo = { id: string; w: number; offX: number; offY: number }
@@ -282,18 +283,19 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
                 Tricky · {c.trickyCount}
               </Link>
             )}
-            {c.troubleCount > 0 ? (
-              <Link
-                href={`/test/${c.id}?mode=trouble`}
-                className="rounded-lg border border-badbg bg-badbg px-2 py-2 text-center font-medium text-badink transition-colors hover:border-badink sm:px-3"
-              >
-                Trouble · {c.troubleCount}
-              </Link>
-            ) : (
-              <span className="cursor-not-allowed rounded-lg border border-border px-2 py-2 text-center font-medium text-faint sm:px-3">
-                Trouble · 0
-              </span>
-            )}
+            {!c.disableTrouble &&
+              (c.troubleCount > 0 ? (
+                <Link
+                  href={`/test/${c.id}?mode=trouble`}
+                  className="rounded-lg border border-badbg bg-badbg px-2 py-2 text-center font-medium text-badink transition-colors hover:border-badink sm:px-3"
+                >
+                  Trouble · {c.troubleCount}
+                </Link>
+              ) : (
+                <span className="cursor-not-allowed rounded-lg border border-border px-2 py-2 text-center font-medium text-faint sm:px-3">
+                  Trouble · 0
+                </span>
+              ))}
           </div>
         )}
       </>

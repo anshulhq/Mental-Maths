@@ -18,6 +18,7 @@ export type CategoryDef = {
   answerFor?: (questionText: string) => number
   isTricky?: (item: string) => boolean
   singleTable?: { min: number; max: number; matches: (item: string, table: number) => boolean }
+  disableTrouble?: boolean
 }
 
 export const QUICK_LENGTH = 20
@@ -277,6 +278,9 @@ for (let t = 2; t <= 25; t++) {
 }
 const tableItems = [...tableFacts]
 
+export const trickyTableFacts: readonly string[] = ['4x7', '4x6', '5x8', '5x9', '6x7', '6x8', '3x7', '3x8', '4x8', '4x9']
+const trickyTableSet = new Set(trickyTableFacts)
+
 const tables: CategoryDef = {
   id: 'tables-2-20',
   name: 'Tables 2–25 (×10)',
@@ -303,6 +307,8 @@ const tables: CategoryDef = {
       return hi === table || (lo === table && hi <= 10)
     },
   },
+  isTricky: (item) => trickyTableSet.has(item),
+  disableTrouble: true,
 }
 
 const fractionItems = [
