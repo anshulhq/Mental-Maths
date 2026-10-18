@@ -512,7 +512,6 @@ export default function Quiz({
           </div>
         </div>
       </div>
-      <Leaderboard records={activeRecords} disableFull={!!cat.disableFull} />
     </>
   )
 }
@@ -564,7 +563,7 @@ export default function Quiz({
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Time', value: fmtDuration(elapsed) },
+          { label: 'Time', value: fmtRecord(elapsed) },
           { label: 'Avg / question', value: fmtSeconds(avg) },
           { label: 'Fastest correct', value: Number.isFinite(fastest) ? fmtSeconds(fastest) : '—' },
           { label: 'Wrong', value: String(wrong.length) },
