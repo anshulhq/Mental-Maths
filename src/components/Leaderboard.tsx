@@ -31,11 +31,11 @@ function groupLabel(mode: string, variant: number | null, disableFull: boolean):
 export default function Leaderboard({
   records,
   disableFull,
-  glow = false,
+  glowRank,
 }: {
   records: RecordRow[]
   disableFull: boolean
-  glow?: boolean
+  glowRank?: number | null
 }) {
   const groups = new Map<string, RecordRow[]>()
   for (const r of records) {
@@ -79,7 +79,7 @@ export default function Leaderboard({
                 {list.slice(0, 3).map((r, i) => (
                   <div
                     key={`${key}:${i}`}
-                    className={`flex items-center gap-2.5 rounded-md px-1.5 py-0.5 text-sm ${glow && i === 0 ? 'record-glow' : ''}`}
+                    className={`flex items-center gap-2.5 rounded-md px-1.5 py-0.5 text-sm ${glowRank === i + 1 ? 'record-glow' : ''}`}
                   >
                     <span
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-1 ${MEDAL_CLASSES[i]}`}

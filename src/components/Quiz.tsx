@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Celebration from '@/components/Celebration'
 import Confetti from '@/components/Confetti'
 import Leaderboard from '@/components/Leaderboard'
 import {
@@ -68,7 +69,7 @@ export default function Quiz({
   const [elapsed, setElapsed] = useState(0)
   const [saveState, setSaveState] = useState<SaveState>('saved')
   const [records, setRecords] = useState<RecordRow[]>(initialRecords)
-  const [brokeRecord, setBrokeRecord] = useState(false)
+  const [newRank, setNewRank] = useState<number | null>(null)
   const [menuNote, setMenuNote] = useState<string | null>(null)
 
   const startedAtRef = useRef(0)
@@ -120,7 +121,7 @@ export default function Quiz({
       questionStartRef.current = Date.now()
       setElapsed(0)
       setSaveState('saved')
-      setBrokeRecord(false)
+      setNewRank(null)
       setPhase('quiz')
     },
     [cat],
@@ -262,13 +263,14 @@ export default function Quiz({
     const key = `${mode}:${variant ?? ''}`
     const correctCount = list.filter((r) => r.isCorrect).length
     const perfect = list.length > 0 && correctCount === list.length
-    const prevBest = records.filter((r) => `${r.mode}:${r.variant ?? ''}` === key).reduce<number | undefined>(
-      (min, r) => (min === undefined || r.durationMs < min ? r.durationMs : min),
-      undefined,
-    )
-    const isRecord = completed && perfect && (prevBest === undefined || durationMs < prevBest)
-    setBrokeRecord(isRecord)
-    if (isRecord) {
+    const group = records
+      .filter((r) => `${r.mode}:${r.variant ?? ''}` === key)
+      .map((r) => r.durationMs)
+      .sort((a, b) => a - b)
+    const qualifies = completed && perfect && (group.length < 3 || durationMs < group[2])
+    const rank = qualifies ? group.filter((d) => d < durationMs).length + 1 : null
+    setNewRank(rank)
+    if (qualifies) {
       setRecords((prev) => [
         ...prev,
         {
@@ -545,7 +547,7 @@ export default function Quiz({
           {fmtPercent(correct, total)}
         </p>
         {endedEarly && <p className="mt-1 text-xs text-faint">ended early after {total} of {questions.length}</p>}
-        {brokeRecord && (
+        {newRank === 1 && (
           <div className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full border border-warnbg bg-gradient-to-r from-warnbg via-warnbg/60 to-warnbg px-4 py-1.5 shadow-md">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-warnink">
               <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
@@ -558,7 +560,12 @@ export default function Quiz({
             <span className="text-sm font-semibold text-warnink">New best time — {fmtRecord(elapsed)}</span>
           </div>
         )}
-        {brokeRecord && <Confetti />}
+        {newRank === 1 && (
+          <>
+            <Confetti />
+            <Celebration label={fmtRecord(elapsed)} />
+          </>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -641,7 +648,7 @@ export default function Quiz({
         )}
       </div>
     </div>
-    <Leaderboard records={activeRecords} disableFull={!!cat.disableFull} glow={brokeRecord} />
+    <Leaderboard records={activeRecords} disableFull={!!cat.disableFull} glowRank={newRank} />
     </>
   )
 }
