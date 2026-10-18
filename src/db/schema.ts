@@ -16,6 +16,7 @@ export const attempts = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     categoryId: text('category_id').notNull(),
     mode: text('mode').notNull(),
+    variant: integer('variant'),
     totalQuestions: integer('total_questions').notNull(),
     correctCount: integer('correct_count').notNull(),
     durationMs: integer('duration_ms').notNull(),
@@ -57,3 +58,18 @@ export const preferences = pgTable('preferences', {
     .references(() => users.id, { onDelete: 'cascade' }),
   pinnedOrder: text('pinned_order').notNull().default('[]'),
 })
+
+export const notes = pgTable(
+  'notes',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull().default(''),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index('notes_user_idx').on(t.userId)],
+)

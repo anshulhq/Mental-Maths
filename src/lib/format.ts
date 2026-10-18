@@ -17,6 +17,13 @@ export function fmtSeconds(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
+export function fmtRecord(ms: number): string {
+  const total = ms / 1000
+  const m = Math.floor(total / 60)
+  const s = total - m * 60
+  return `${m}:${s.toFixed(1).padStart(4, '0')}`
+}
+
 export function fmtDate(d: Date): string {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }

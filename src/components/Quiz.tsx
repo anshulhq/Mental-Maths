@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Confetti from '@/components/Confetti'
 import {
   QUICK_LENGTH,
   answerText,
@@ -12,7 +13,8 @@ import {
   type ItemStats,
   type TestMode,
 } from '@/lib/categories'
-import { fmtDuration, fmtPercent, fmtSeconds, toDateKey } from '@/lib/format'
+import { fmtDuration, fmtPercent, fmtRecord, fmtSeconds, toDateKey } from '@/lib/format'
+import type { RecordRow } from '@/lib/queries'
 
 type Phase = 'menu' | 'quiz' | 'report'
 type SaveState = 'saving' | 'saved' | 'error'
@@ -43,11 +45,13 @@ export default function Quiz({
   initialStats,
   initialMode,
   initialCount,
+  initialRecords,
 }: {
   categoryId: string
   initialStats: ItemStats
   initialMode?: TestMode
   initialCount?: number
+  initialRecords: RecordRow[]
 }) {
   const cat = getCategory(categoryId)
 
@@ -62,6 +66,8 @@ export default function Quiz({
   const [flash, setFlash] = useState<{ ok: boolean; answer: string } | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [saveState, setSaveState] = useState<SaveState>('saved')
+  const [records, setRecords] = useState<RecordRow[]>(initialRecords)
+  const [brokeRecord, setBrokeRecord] = useState(false)
   const [menuNote, setMenuNote] = useState<string | null>(null)
 
   const startedAtRef = useRef(0)
@@ -107,6 +113,7 @@ export default function Quiz({
       questionStartRef.current = Date.now()
       setElapsed(0)
       setSaveState('saved')
+      setBrokeRecord(false)
       setPhase('quiz')
     },
     [cat],
@@ -240,8 +247,33 @@ export default function Quiz({
     }
     const durationMs = Math.max(500, Date.now() - startedAtRef.current)
     const totalPlanned = questions.length
+    const completed = list.length === totalPlanned
     setElapsed(durationMs)
     mergeStats(list)
+
+    const variant = mode === 'quick' || mode === 'single' ? count : null
+    const key = `${mode}:${variant ?? ''}`
+    const correctCount = list.filter((r) => r.isCorrect).length
+    const perfect = list.length > 0 && correctCount === list.length
+    const prevBest = records.filter((r) => `${r.mode}:${r.variant ?? ''}` === key).reduce<number | undefined>(
+      (min, r) => (min === undefined || r.durationMs < min ? r.durationMs : min),
+      undefined,
+    )
+    const isRecord = completed && perfect && (prevBest === undefined || durationMs < prevBest)
+    setBrokeRecord(isRecord)
+    if (isRecord) {
+      setRecords((prev) => [
+        ...prev,
+        {
+          mode,
+          variant,
+          durationMs,
+          correctCount,
+          totalQuestions: list.length,
+          createdAt: new Date().toISOString(),
+        },
+      ])
+    }
 
     const save = async () => {
       try {
@@ -251,8 +283,9 @@ export default function Quiz({
           body: JSON.stringify({
             categoryId: cat!.id,
             mode,
+            variant,
             durationMs,
-            completed: list.length === totalPlanned,
+            completed,
             localDate: toDateKey(new Date()),
             answers: list.map((r) => ({ item: r.item, isCorrect: r.isCorrect, timeMs: Math.min(r.timeMs, 600_000) })),
           }),
@@ -499,6 +532,20 @@ export default function Quiz({
           {fmtPercent(correct, total)}
         </p>
         {endedEarly && <p className="mt-1 text-xs text-faint">ended early after {total} of {questions.length}</p>}
+        {brokeRecord && (
+          <div className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full border border-warnbg bg-gradient-to-r from-warnbg via-warnbg/60 to-warnbg px-4 py-1.5 shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-warnink">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+              <path d="M4 22h16" />
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+            </svg>
+            <span className="text-sm font-semibold text-warnink">New best time — {fmtRecord(elapsed)}</span>
+          </div>
+        )}
+        {brokeRecord && <Confetti />}
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

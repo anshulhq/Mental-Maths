@@ -9,16 +9,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-svh">
       <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:gap-6">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:gap-x-6">
           <Link href="/" className="text-[15px] font-semibold tracking-tight">
             Mental Maths
           </Link>
           <nav className="flex gap-3 text-sm text-muted sm:gap-4">
-            <Link href="/" className="transition-colors hover:text-ink">
-              Practice
-            </Link>
             <Link href="/tables" className="transition-colors hover:text-ink">
               Tables
+            </Link>
+            <Link href="/notes" className="transition-colors hover:text-ink">
+              Notes
             </Link>
             <Link href="/stats" className="transition-colors hover:text-ink">
               Stats

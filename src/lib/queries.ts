@@ -144,6 +144,48 @@ export async function getOverallStats(userId: number) {
   }
 }
 
+export type RecordRow = {
+  mode: string
+  variant: number | null
+  durationMs: number
+  correctCount: number
+  totalQuestions: number
+  createdAt: string
+}
+
+export async function getRecords(userId: number, categoryId: string): Promise<RecordRow[]> {
+  const db = await getDb()
+  const rows = await db
+    .select({
+      mode: attempts.mode,
+      variant: attempts.variant,
+      durationMs: attempts.durationMs,
+      correctCount: attempts.correctCount,
+      totalQuestions: attempts.totalQuestions,
+      createdAt: attempts.createdAt,
+    })
+    .from(attempts)
+    .where(
+      and(
+        eq(attempts.userId, userId),
+        eq(attempts.categoryId, categoryId),
+        eq(attempts.completed, true),
+        sql`${attempts.correctCount} = ${attempts.totalQuestions}`,
+      ),
+    )
+    .orderBy(attempts.durationMs)
+    .limit(300)
+
+  return rows.map((r) => ({
+    mode: r.mode,
+    variant: r.variant === null ? null : Number(r.variant),
+    durationMs: Number(r.durationMs),
+    correctCount: Number(r.correctCount),
+    totalQuestions: Number(r.totalQuestions),
+    createdAt: new Date(r.createdAt).toISOString(),
+  }))
+}
+
 export async function getPinnedOrder(userId: number): Promise<string[]> {
   try {
     const rows = await getDb().then((db) =>

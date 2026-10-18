@@ -8,6 +8,7 @@ import { getCategory } from '@/lib/categories'
 const payloadSchema = z.object({
   categoryId: z.string().min(1),
   mode: z.enum(['full', 'quick', 'trouble', 'tricky', 'single']),
+  variant: z.number().int().min(1).max(1000).nullable().optional(),
   durationMs: z.number().int().min(0).max(43_200_000),
   completed: z.boolean(),
   localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
       userId: session.userId,
       categoryId: cat.id,
       mode: data.mode,
+      variant: data.variant ?? null,
       totalQuestions: data.answers.length,
       correctCount,
       durationMs: data.durationMs,
