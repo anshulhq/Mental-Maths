@@ -28,7 +28,15 @@ function groupLabel(mode: string, variant: number | null, disableFull: boolean):
   return disableFull ? `Random ${variant ?? ''}` : 'Quick test'
 }
 
-export default function Leaderboard({ records, disableFull }: { records: RecordRow[]; disableFull: boolean }) {
+export default function Leaderboard({
+  records,
+  disableFull,
+  glow = false,
+}: {
+  records: RecordRow[]
+  disableFull: boolean
+  glow?: boolean
+}) {
   const groups = new Map<string, RecordRow[]>()
   for (const r of records) {
     const key = `${r.mode}:${r.variant ?? ''}`
@@ -69,7 +77,10 @@ export default function Leaderboard({ records, disableFull }: { records: RecordR
               </h3>
               <div className="mt-2 space-y-1.5">
                 {list.slice(0, 3).map((r, i) => (
-                  <div key={`${key}:${i}`} className="flex items-center gap-2.5 text-sm">
+                  <div
+                    key={`${key}:${i}`}
+                    className={`flex items-center gap-2.5 rounded-md px-1.5 py-0.5 text-sm ${glow && i === 0 ? 'record-glow' : ''}`}
+                  >
                     <span
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-sm ring-1 ${MEDAL_CLASSES[i]}`}
                     >

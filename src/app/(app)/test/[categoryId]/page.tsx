@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import Leaderboard from '@/components/Leaderboard'
 import Quiz from '@/components/Quiz'
 import { requireSession } from '@/lib/auth'
 import { getCategory, type ItemStat, type TestMode } from '@/lib/categories'
@@ -69,8 +68,6 @@ export default async function TestPage(props: PageProps<'/test/[categoryId]'>) {
           })}
         </div>
       </section>
-
-      <Leaderboard records={records} disableFull={!!cat.disableFull} />
     </div>
   )
 }

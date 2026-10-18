@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Confetti from '@/components/Confetti'
+import Leaderboard from '@/components/Leaderboard'
 import {
   QUICK_LENGTH,
   answerText,
@@ -81,6 +82,12 @@ export default function Quiz({
   const lastSaveRef = useRef<(() => Promise<boolean>) | null>(null)
 
   const troubleCount = useMemo(() => (cat ? troubleItems(cat, stats).length : 0), [cat, stats])
+
+  const activeRecords = useMemo(() => {
+    if (phase === 'menu' || !cat) return records
+    const key = `${mode}:${mode === 'quick' || mode === 'single' ? count : ''}`
+    return records.filter((r) => `${r.mode}:${r.variant ?? ''}` === key)
+  }, [records, phase, mode, count, cat])
 
   useEffect(() => {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
@@ -318,6 +325,7 @@ export default function Quiz({
     const quickLength = Math.min(QUICK_LENGTH, cat.items.length)
     const randomLengths = cat.quickLengths ?? [quickLength]
     return (
+      <>
       <div className="rounded-xl border border-border bg-surface p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
@@ -440,13 +448,16 @@ export default function Quiz({
 
         {menuNote && <p className="mt-4 rounded-lg bg-warnbg px-3 py-2 text-sm text-warnink">{menuNote}</p>}
       </div>
-    )
-  }
+      <Leaderboard records={activeRecords} disableFull={!!cat.disableFull} />
+    </>
+  )
+}
 
   if (phase === 'quiz') {
     const q = questions[index]
     const answered = results.length
     return (
+      <>
       <div className="rounded-xl border border-border bg-surface">
         <div className="h-1.5 overflow-hidden rounded-t-xl bg-subtle">
           <div className="h-full bg-emerald-500 transition-[width] duration-150" style={{ width: `${(answered / questions.length) * 100}%` }} />
@@ -501,8 +512,10 @@ export default function Quiz({
           </div>
         </div>
       </div>
-    )
-  }
+      <Leaderboard records={activeRecords} disableFull={!!cat.disableFull} />
+    </>
+  )
+}
 
   const total = results.length
   const correct = results.filter((r) => r.isCorrect).length
@@ -513,6 +526,7 @@ export default function Quiz({
   const endedEarly = total < questions.length
 
   return (
+    <>
     <div className="rounded-xl border border-border bg-surface p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-semibold tracking-tight">
@@ -628,5 +642,7 @@ export default function Quiz({
         )}
       </div>
     </div>
+    <Leaderboard records={activeRecords} disableFull={!!cat.disableFull} glow={brokeRecord} />
+    </>
   )
 }
