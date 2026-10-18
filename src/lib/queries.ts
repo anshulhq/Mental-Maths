@@ -186,6 +186,12 @@ export async function getRecords(userId: number, categoryId: string): Promise<Re
   }))
 }
 
+export async function getTotalPracticeMs(userId: number): Promise<number> {
+  const db = await getDb()
+  const rows = await db.select({ total: sum(attempts.durationMs) }).from(attempts).where(eq(attempts.userId, userId))
+  return Number(rows[0]?.total ?? 0)
+}
+
 export async function getPinnedOrder(userId: number): Promise<string[]> {
   try {
     const rows = await getDb().then((db) =>

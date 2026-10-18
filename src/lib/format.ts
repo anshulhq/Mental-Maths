@@ -24,6 +24,15 @@ export function fmtRecord(ms: number): string {
   return `${m}:${s.toFixed(1).padStart(4, '0')}`
 }
 
+export function fmtLifetime(ms: number): string {
+  const totalMin = Math.floor(ms / 60000)
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`
+  if (totalMin > 0) return `${totalMin}m`
+  return `${Math.floor(ms / 1000)}s`
+}
+
 export function fmtDate(d: Date): string {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }

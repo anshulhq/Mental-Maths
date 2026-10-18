@@ -1,17 +1,19 @@
 import Heatmap from '@/components/Heatmap'
+import LifetimeBanner from '@/components/LifetimeBanner'
 import TestGrid, { type CardVM } from '@/components/TestGrid'
 import { requireSession } from '@/lib/auth'
 import { QUICK_LENGTH, categories, masteryStats, troubleItems } from '@/lib/categories'
 import { fmtRatio } from '@/lib/format'
-import { getAllItemStats, getCategorySummaries, getPinnedOrder, getPracticeDays } from '@/lib/queries'
+import { getAllItemStats, getCategorySummaries, getPinnedOrder, getPracticeDays, getTotalPracticeMs } from '@/lib/queries'
 
 export default async function HomePage() {
   const session = await requireSession()
-  const [days, summaries, allItemStats, pinnedOrder] = await Promise.all([
+  const [days, summaries, allItemStats, pinnedOrder, totalMs] = await Promise.all([
     getPracticeDays(session.userId),
     getCategorySummaries(session.userId),
     getAllItemStats(session.userId),
     getPinnedOrder(session.userId),
+    getTotalPracticeMs(session.userId),
   ])
 
   const cards: CardVM[] = categories.map((cat) => {
@@ -37,6 +39,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
+      <LifetimeBanner totalMs={totalMs} days={days} />
       <Heatmap days={days} />
       <TestGrid cards={cards} initialPinned={pinnedOrder} />
     </div>
