@@ -326,6 +326,7 @@ const tables10: CategoryDef = {
   singleTable: { min: 2, max: 10, matches: tableMatches },
   isTricky: (item) => trickyTableSet.has(item),
   disableTrouble: true,
+  disableQuick: true,
   spotPool: trickyTableFacts,
 }
 
@@ -429,10 +430,7 @@ export function buildSpotQuestions(pool: readonly string[]): SpotQuestion[] {
   for (let i = 0; i < SPOT_LENGTH; i++) {
     const fact = facts[Math.floor(Math.random() * facts.length)]
     const confusables = facts.filter(
-      (f) =>
-        f.key !== fact.key &&
-        f.answer !== fact.answer &&
-        (f.lo === fact.lo || f.hi === fact.hi || f.lo === fact.hi || f.hi === fact.lo),
+      (f) => f.key !== fact.key && f.answer !== fact.answer && f.lo === fact.lo && Math.abs(f.hi - fact.hi) === 1,
     )
     const isTrue = confusables.length === 0 || Math.random() < 0.5
     const shown = isTrue ? fact.answer : confusables[Math.floor(Math.random() * confusables.length)].answer
