@@ -6,9 +6,14 @@ import { requireSession } from '@/lib/auth'
 
 export default async function NotesPage() {
   const session = await requireSession()
-  const rows = await getDb().then((db) =>
-    db.select().from(notesTable).where(eq(notesTable.userId, session.userId)).orderBy(desc(notesTable.updatedAt)),
-  )
+  const rows = await getDb()
+    .then((db) =>
+      db.select().from(notesTable).where(eq(notesTable.userId, session.userId)).orderBy(desc(notesTable.updatedAt)),
+    )
+    .catch((err) => {
+      console.error('Notes query failed — run npm run db:push', err)
+      return [] as (typeof notesTable.$inferSelect)[]
+    })
 
   const initialNotes = rows.map((n) => ({
     id: n.id,

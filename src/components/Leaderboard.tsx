@@ -24,6 +24,7 @@ function groupLabel(mode: string, variant: number | null, disableFull: boolean):
   if (mode === 'full') return 'Full test'
   if (mode === 'trouble') return 'Trouble drill'
   if (mode === 'tricky') return 'Tricky drill'
+  if (mode === 'spot') return 'Spot the error'
   if (mode === 'single') return `Table ${variant ?? ''}`
   return disableFull ? `Random ${variant ?? ''}` : 'Quick test'
 }

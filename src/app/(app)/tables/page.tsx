@@ -1,15 +1,16 @@
 import Link from 'next/link'
 import { trickyTableGroups } from '@/lib/categories'
 
-const TABLES = Array.from({ length: 24 }, (_, i) => i + 2)
+const TABLES = Array.from({ length: 19 }, (_, i) => i + 2)
 const ROWS = Array.from({ length: 10 }, (_, i) => i + 1)
+const tableCat = (n: number) => (n <= 10 ? 'tables-2-10' : 'tables-11-20')
 
 export default function TablesPage() {
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Multiplication tables</h1>
-        <p className="mt-0.5 text-sm text-muted">2 to 25, up to × 10 — tap a table to jump to it</p>
+        <p className="mt-0.5 text-sm text-muted">2 to 20, up to × 10 — tap a table to jump to it</p>
       </div>
 
       <nav className="grid grid-cols-8 gap-1.5 sm:grid-cols-12">
@@ -32,7 +33,7 @@ export default function TablesPage() {
                 Table of <span className="font-mono">{n}</span>
               </h2>
               <Link
-                href={`/test/tables-2-20?mode=single&n=${n}`}
+                href={`/test/${tableCat(n)}?mode=single&n=${n}`}
                 className="text-xs font-medium text-accent transition-opacity hover:opacity-75"
               >
                 practice →
@@ -57,7 +58,7 @@ export default function TablesPage() {
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-semibold text-warnink">Tricky facts</h2>
           <Link
-            href="/test/tables-2-20?mode=tricky"
+            href="/test/tables-2-10?mode=tricky"
             className="text-xs font-medium text-accent transition-opacity hover:opacity-75"
           >
             drill them →

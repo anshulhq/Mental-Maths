@@ -34,6 +34,8 @@ export default async function HomePage() {
       trickyCount: cat.isTricky ? cat.items.filter(cat.isTricky).length : 0,
       singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max } : null,
       disableTrouble: !!cat.disableTrouble,
+      disableQuick: !!cat.disableQuick,
+      hasSpot: !!cat.spotPool,
     }
   })
 

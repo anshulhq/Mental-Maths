@@ -154,42 +154,52 @@ export type RecordRow = {
 }
 
 export async function getRecords(userId: number, categoryId: string): Promise<RecordRow[]> {
-  const db = await getDb()
-  const rows = await db
-    .select({
-      mode: attempts.mode,
-      variant: attempts.variant,
-      durationMs: attempts.durationMs,
-      correctCount: attempts.correctCount,
-      totalQuestions: attempts.totalQuestions,
-      createdAt: attempts.createdAt,
-    })
-    .from(attempts)
-    .where(
-      and(
-        eq(attempts.userId, userId),
-        eq(attempts.categoryId, categoryId),
-        eq(attempts.completed, true),
-        sql`${attempts.correctCount} = ${attempts.totalQuestions}`,
-      ),
-    )
-    .orderBy(attempts.durationMs)
-    .limit(300)
+  try {
+    const db = await getDb()
+    const rows = await db
+      .select({
+        mode: attempts.mode,
+        variant: attempts.variant,
+        durationMs: attempts.durationMs,
+        correctCount: attempts.correctCount,
+        totalQuestions: attempts.totalQuestions,
+        createdAt: attempts.createdAt,
+      })
+      .from(attempts)
+      .where(
+        and(
+          eq(attempts.userId, userId),
+          eq(attempts.categoryId, categoryId),
+          eq(attempts.completed, true),
+          sql`${attempts.correctCount} = ${attempts.totalQuestions}`,
+        ),
+      )
+      .orderBy(attempts.durationMs)
+      .limit(300)
 
-  return rows.map((r) => ({
-    mode: r.mode,
-    variant: r.variant === null ? null : Number(r.variant),
-    durationMs: Number(r.durationMs),
-    correctCount: Number(r.correctCount),
-    totalQuestions: Number(r.totalQuestions),
-    createdAt: new Date(r.createdAt).toISOString(),
-  }))
+    return rows.map((r) => ({
+      mode: r.mode,
+      variant: r.variant === null ? null : Number(r.variant),
+      durationMs: Number(r.durationMs),
+      correctCount: Number(r.correctCount),
+      totalQuestions: Number(r.totalQuestions),
+      createdAt: new Date(r.createdAt).toISOString(),
+    }))
+  } catch (err) {
+    console.error('getRecords failed — run npm run db:push', err)
+    return []
+  }
 }
 
 export async function getTotalPracticeMs(userId: number): Promise<number> {
-  const db = await getDb()
-  const rows = await db.select({ total: sum(attempts.durationMs) }).from(attempts).where(eq(attempts.userId, userId))
-  return Number(rows[0]?.total ?? 0)
+  try {
+    const db = await getDb()
+    const rows = await db.select({ total: sum(attempts.durationMs) }).from(attempts).where(eq(attempts.userId, userId))
+    return Number(rows[0]?.total ?? 0)
+  } catch (err) {
+    console.error('getTotalPracticeMs failed — run npm run db:push', err)
+    return 0
+  }
 }
 
 export async function getPinnedOrder(userId: number): Promise<string[]> {

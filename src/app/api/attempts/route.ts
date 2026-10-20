@@ -7,7 +7,7 @@ import { getCategory } from '@/lib/categories'
 
 const payloadSchema = z.object({
   categoryId: z.string().min(1),
-  mode: z.enum(['full', 'quick', 'trouble', 'tricky', 'single']),
+  mode: z.enum(['full', 'quick', 'trouble', 'tricky', 'single', 'spot']),
   variant: z.number().int().min(1).max(1000).nullable().optional(),
   durationMs: z.number().int().min(0).max(43_200_000),
   completed: z.boolean(),

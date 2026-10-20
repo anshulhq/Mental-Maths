@@ -1,4 +1,4 @@
-export type TestMode = 'full' | 'quick' | 'trouble' | 'tricky' | 'single'
+export type TestMode = 'full' | 'quick' | 'trouble' | 'tricky' | 'single' | 'spot'
 
 export type ItemStat = { attempts: number; correct: number }
 export type ItemStats = Record<string, ItemStat>
@@ -14,11 +14,13 @@ export type CategoryDef = {
   tolerance: number
   hint?: string
   disableFull?: boolean
+  disableQuick?: boolean
   quickLengths?: readonly number[]
   answerFor?: (questionText: string) => number
   isTricky?: (item: string) => boolean
   singleTable?: { min: number; max: number; matches: (item: string, table: number) => boolean }
   disableTrouble?: boolean
+  spotPool?: readonly string[]
 }
 
 export const QUICK_LENGTH = 20
@@ -36,6 +38,7 @@ const squares: CategoryDef = {
   question: (n) => `${n}²`,
   answer: (n) => Number(n) ** 2,
   tolerance: 0,
+  disableQuick: true,
 }
 
 const reverseSquares25: CategoryDef = {
@@ -47,6 +50,7 @@ const reverseSquares25: CategoryDef = {
   question: (n) => `√${Number(n) ** 2}`,
   answer: (n) => Number(n),
   tolerance: 0,
+  disableQuick: true,
 }
 
 const squaresEnding5: CategoryDef = {
@@ -106,6 +110,7 @@ const cubes: CategoryDef = {
   question: (n) => `${n}³`,
   answer: (n) => Number(n) ** 3,
   tolerance: 0,
+  disableQuick: true,
 }
 
 const squares300: CategoryDef = {
@@ -263,6 +268,7 @@ const addFacts: CategoryDef = {
     return a + b
   },
   tolerance: 0,
+  disableQuick: true,
   isTricky: (item) => {
     const [a, b] = item.split('x').map(Number)
     return a + b >= 10
@@ -272,11 +278,34 @@ const addFacts: CategoryDef = {
 const subtract50 = subtractFrom(50, 50)
 const subtract100 = subtractFrom(100, 100)
 
-const tableFacts = new Set<string>()
-for (let t = 2; t <= 25; t++) {
-  for (let b = 2; b <= 10; b++) tableFacts.add(`${Math.min(t, b)}x${Math.max(t, b)}`)
+const makeTableItems = (from: number, to: number): string[] => {
+  const facts = new Set<string>()
+  for (let t = from; t <= to; t++) {
+    for (let b = 2; b <= 10; b++) facts.add(`${Math.min(t, b)}x${Math.max(t, b)}`)
+  }
+  return [...facts]
 }
-const tableItems = [...tableFacts]
+
+const tableBase = {
+  label: (item: string) => {
+    const [lo, hi] = item.split('x')
+    return `${hi}×${lo}`
+  },
+  question: (item: string) => {
+    const [lo, hi] = item.split('x').map(Number)
+    return Math.random() < 0.5 ? `${hi} × ${lo}` : `${lo} × ${hi}`
+  },
+  answer: (item: string) => {
+    const [lo, hi] = item.split('x').map(Number)
+    return lo * hi
+  },
+  tolerance: 0,
+}
+
+const tableMatches = (item: string, table: number) => {
+  const [lo, hi] = item.split('x').map(Number)
+  return hi === table || (lo === table && hi <= 10)
+}
 
 export const trickyTableGroups: readonly (readonly [string, string])[] = [
   ['4x7', '4x6'],
@@ -288,34 +317,25 @@ export const trickyTableGroups: readonly (readonly [string, string])[] = [
 export const trickyTableFacts: readonly string[] = trickyTableGroups.flat()
 const trickyTableSet = new Set(trickyTableFacts)
 
-const tables: CategoryDef = {
-  id: 'tables-2-20',
-  name: 'Tables 2–25 (×10)',
-  tagline: 'Each table from 2 to 25, up to × 10',
-  items: tableItems,
-  label: (item) => {
-    const [lo, hi] = item.split('x')
-    return `${hi}×${lo}`
-  },
-  question: (item) => {
-    const [lo, hi] = item.split('x').map(Number)
-    return Math.random() < 0.5 ? `${hi} × ${lo}` : `${lo} × ${hi}`
-  },
-  answer: (item) => {
-    const [lo, hi] = item.split('x').map(Number)
-    return lo * hi
-  },
-  tolerance: 0,
-  singleTable: {
-    min: 2,
-    max: 25,
-    matches: (item, table) => {
-      const [lo, hi] = item.split('x').map(Number)
-      return hi === table || (lo === table && hi <= 10)
-    },
-  },
+const tables10: CategoryDef = {
+  ...tableBase,
+  id: 'tables-2-10',
+  name: 'Tables 2–10',
+  tagline: 'Every table from 2 to 10, up to × 10',
+  items: makeTableItems(2, 10),
+  singleTable: { min: 2, max: 10, matches: tableMatches },
   isTricky: (item) => trickyTableSet.has(item),
   disableTrouble: true,
+  spotPool: trickyTableFacts,
+}
+
+const tables20: CategoryDef = {
+  ...tableBase,
+  id: 'tables-11-20',
+  name: 'Tables 11–20',
+  tagline: 'Every table from 11 to 20, up to × 10',
+  items: makeTableItems(11, 20),
+  singleTable: { min: 11, max: 20, matches: tableMatches },
 }
 
 const fractionItems = [
@@ -335,10 +355,11 @@ const fractions: CategoryDef = {
     return (n / d) * 100
   },
   tolerance: 0.06,
+  disableQuick: true,
   hint: 'answer in % — 1 or 2 decimals',
 }
 
-export const categories: readonly CategoryDef[] = [squares, reverseSquares25, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, carryAdd22, addFacts, cubes, tables, fractions]
+export const categories: readonly CategoryDef[] = [squares, reverseSquares25, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, carryAdd22, addFacts, cubes, tables10, tables20, fractions]
 
 export function getCategory(id: string | undefined): CategoryDef | undefined {
   return categories.find((c) => c.id === id)
@@ -395,6 +416,31 @@ export function masteryStats(cat: CategoryDef, stats: ItemStats) {
   return { mastered, seen, total: cat.items.length }
 }
 
+export const SPOT_LENGTH = 15
+
+export type SpotQuestion = { item: string; text: string; isTrue: boolean }
+
+export function buildSpotQuestions(pool: readonly string[]): SpotQuestion[] {
+  const facts = pool.map((key) => {
+    const [lo, hi] = key.split('x').map(Number)
+    return { key, lo, hi, answer: lo * hi }
+  })
+  const out: SpotQuestion[] = []
+  for (let i = 0; i < SPOT_LENGTH; i++) {
+    const fact = facts[Math.floor(Math.random() * facts.length)]
+    const confusables = facts.filter(
+      (f) =>
+        f.key !== fact.key &&
+        f.answer !== fact.answer &&
+        (f.lo === fact.lo || f.hi === fact.hi || f.lo === fact.hi || f.hi === fact.lo),
+    )
+    const isTrue = confusables.length === 0 || Math.random() < 0.5
+    const shown = isTrue ? fact.answer : confusables[Math.floor(Math.random() * confusables.length)].answer
+    out.push({ item: fact.key, text: `${fact.hi} × ${fact.lo} = ${shown}`, isTrue })
+  }
+  return out
+}
+
 export function defaultQuickLength(cat: CategoryDef): number {
   if (cat.quickLengths && cat.quickLengths.length > 0) {
     return cat.quickLengths[Math.floor(cat.quickLengths.length / 2)]
@@ -423,6 +469,7 @@ export function buildQuestions(
     return { items: shuffle(cat.items.filter((item) => spec.matches(item, table))) }
   }
   if (mode === 'quick') {
+    if (cat.disableQuick) return { items: shuffle(cat.items) }
     const length = Math.min(n ?? defaultQuickLength(cat), cat.items.length)
     return { items: shuffle(cat.items).slice(0, length) }
   }

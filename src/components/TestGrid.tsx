@@ -17,6 +17,8 @@ export type CardVM = {
   trickyCount: number
   singleTable: { min: number; max: number } | null
   disableTrouble: boolean
+  disableQuick: boolean
+  hasSpot: boolean
 }
 
 type DragInfo = { id: string; w: number; offX: number; offY: number }
@@ -231,7 +233,9 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
         ) : (
           <div
             className={`mt-4 grid gap-2 self-end text-xs sm:text-sm ${
-              c.trickyCount > 0 || c.singleTable ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'
+              1 + (c.disableQuick ? 0 : 1) + (c.trickyCount > 0 ? 1 : 0) + (c.disableTrouble ? 0 : 1) + (c.singleTable ? 1 : 0) >= 4
+                ? 'grid-cols-2 sm:grid-cols-4'
+                : 'grid-cols-3'
             }`}
           >
             <Link
@@ -240,12 +244,14 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
             >
               Full · {c.total}
             </Link>
-            <Link
-              href={`/test/${c.id}?mode=quick`}
-              className="rounded-lg border border-strong px-2 py-2 text-center font-medium transition-colors hover:border-ink sm:px-3"
-            >
-              Quick · {c.lengths[0]}
-            </Link>
+            {!c.disableQuick && (
+              <Link
+                href={`/test/${c.id}?mode=quick`}
+                className="rounded-lg border border-strong px-2 py-2 text-center font-medium transition-colors hover:border-ink sm:px-3"
+              >
+                Quick · {c.lengths[0]}
+              </Link>
+            )}
             {c.singleTable && (
               <div className="relative">
                 <button
@@ -281,6 +287,14 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
                 className="rounded-lg border border-warnbg bg-warnbg px-2 py-2 text-center font-medium text-warnink transition-colors hover:border-warnink sm:px-3"
               >
                 Tricky · {c.trickyCount}
+              </Link>
+            )}
+            {c.hasSpot && (
+              <Link
+                href={`/test/${c.id}?mode=spot`}
+                className="rounded-lg border border-strong bg-subtle px-2 py-2 text-center font-medium transition-colors hover:border-ink sm:px-3"
+              >
+                Spot error
               </Link>
             )}
             {!c.disableTrouble &&

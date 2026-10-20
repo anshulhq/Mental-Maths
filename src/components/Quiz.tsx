@@ -9,6 +9,7 @@ import {
   QUICK_LENGTH,
   answerText,
   buildQuestions,
+  buildSpotQuestions,
   checkAnswer,
   getCategory,
   troubleItems,
@@ -21,7 +22,7 @@ import type { RecordRow } from '@/lib/queries'
 type Phase = 'menu' | 'quiz' | 'report'
 type SaveState = 'saving' | 'saved' | 'error'
 
-type QuizQuestion = { item: string; text: string }
+type QuizQuestion = { item: string; text: string; isTrue?: boolean }
 type QuizResult = {
   item: string
   text: string
@@ -38,6 +39,7 @@ function modeLabel(mode: TestMode, count: number, disableFull?: boolean): string
   if (mode === 'full') return 'Full test'
   if (mode === 'trouble') return 'Trouble drill'
   if (mode === 'tricky') return 'Tricky drill'
+  if (mode === 'spot') return 'Spot the error'
   if (mode === 'single') return `Table ${count}`
   return disableFull ? `Random ${count}` : 'Quick test'
 }
@@ -98,10 +100,23 @@ export default function Quiz({
   const start = useCallback(
     (m: TestMode, n?: number) => {
       if (!cat) return
-      const mode: TestMode = m === 'full' && cat.disableFull ? 'quick' : m
-      const built = buildQuestions(cat, mode, statsRef.current, n)
-      if (built.items.length === 0) {
-        setMenuNote(built.note ?? 'Nothing to test right now.')
+      let mode: TestMode = m === 'full' && cat.disableFull ? 'quick' : m
+      if (mode === 'quick' && cat.disableQuick) mode = 'full'
+      let qs: QuizQuestion[] = []
+      let note: string | undefined
+      if (mode === 'spot') {
+        if (!cat.spotPool) {
+          setMenuNote('No error-spotting bank for this test.')
+          return
+        }
+        qs = buildSpotQuestions(cat.spotPool)
+      } else {
+        const built = buildQuestions(cat, mode, statsRef.current, n)
+        note = built.note
+        qs = built.items.map((item) => ({ item, text: cat.question(item) }))
+      }
+      if (qs.length === 0) {
+        setMenuNote(note ?? 'Nothing to test right now.')
         return
       }
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
@@ -111,8 +126,8 @@ export default function Quiz({
       autoTimerRef.current = null
       setMenuNote(null)
       setMode(mode)
-      setCount(mode === 'quick' ? built.items.length : mode === 'single' ? (n ?? 0) : 0)
-      setQuestions(built.items.map((item) => ({ item, text: cat.question(item) })))
+      setCount(mode === 'quick' ? qs.length : mode === 'single' ? (n ?? 0) : 0)
+      setQuestions(qs)
       setResults([])
       setIndex(0)
       setInput('')
@@ -144,17 +159,32 @@ export default function Quiz({
   }, [phase])
 
   useEffect(() => {
+    if (phase !== 'quiz' || mode !== 'spot') return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 't' || e.key === 'T') answerSpot(true)
+      else if (e.key === 'f' || e.key === 'F') answerSpot(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
+  useEffect(() => {
     if (phase !== 'menu' || !cat) return
     const onKey = (e: KeyboardEvent) => {
       if (cat.disableFull && cat.quickLengths) {
         const idx = ['1', '2', '3'].indexOf(e.key)
         if (idx >= 0 && cat.quickLengths[idx]) start('quick', cat.quickLengths[idx])
         else if (e.key === '4') start('trouble')
+      } else if (cat.disableQuick) {
+        if (e.key === '1') start('full')
+        else if (e.key === '2' && !cat.disableTrouble) start('trouble')
+        else if ((cat.disableTrouble ? e.key === '2' : e.key === '3') && cat.isTricky) start('tricky')
       } else {
         if (e.key === '1') start('full')
         else if (e.key === '2') start('quick')
         else if (e.key === '3') start(cat.disableTrouble ? 'tricky' : 'trouble')
         else if (e.key === '4' && cat.isTricky && !cat.disableTrouble) start('tricky')
+        else if (e.key === '4' && cat.spotPool) start('spot')
       }
     }
     window.addEventListener('keydown', onKey)
@@ -228,6 +258,19 @@ export default function Quiz({
       correctAnswer: answerText(cat!, q.item, q.text),
       userAnswer: null,
       isCorrect: false,
+      timeMs: Date.now() - questionStartRef.current,
+    })
+  }
+
+  function answerSpot(choice: boolean) {
+    const q = questions[index]
+    if (!q || flashActiveRef.current) return
+    recordResult({
+      item: q.item,
+      text: q.text,
+      correctAnswer: q.isTrue ? '✓ True' : '✗ False',
+      userAnswer: choice ? '✓ True' : '✗ False',
+      isCorrect: choice === q.isTrue,
       timeMs: Date.now() - questionStartRef.current,
     })
   }
@@ -386,16 +429,18 @@ export default function Quiz({
               </div>
               <p className="mt-1 text-xs text-muted">All {cat.items.length} items, jumbled. Covers everything eventually.</p>
             </button>
-            <button
-              onClick={() => start('quick')}
-              className="rounded-lg border border-border p-4 text-left transition-colors hover:border-ink hover:bg-subtle"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Quick {quickLength}</span>
-                <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">2</kbd>
-              </div>
-              <p className="mt-1 text-xs text-muted">{quickLength} random items. Fast daily drill.</p>
-            </button>
+            {!cat.disableQuick && (
+              <button
+                onClick={() => start('quick')}
+                className="rounded-lg border border-border p-4 text-left transition-colors hover:border-ink hover:bg-subtle"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Quick {quickLength}</span>
+                  <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">2</kbd>
+                </div>
+                <p className="mt-1 text-xs text-muted">{quickLength} random items. Fast daily drill.</p>
+              </button>
+            )}
             {!cat.disableTrouble && (
               <button
                 onClick={() => start('trouble')}
@@ -404,7 +449,9 @@ export default function Quiz({
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Trouble drill</span>
-                  <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">3</kbd>
+                  <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">
+                    {cat.disableQuick ? '2' : '3'}
+                  </kbd>
                 </div>
                 <p className="mt-1 text-xs text-muted">
                   {troubleCount > 0 ? `${troubleCount} weak item${troubleCount === 1 ? '' : 's'} you keep missing.` : 'No weak items yet — take a test first.'}
@@ -419,10 +466,24 @@ export default function Quiz({
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-warnink">Tricky drill</span>
                   <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">
-                    {cat.disableTrouble ? '3' : '4'}
+                    {cat.disableQuick ? (cat.disableTrouble ? '2' : '3') : cat.disableTrouble ? '3' : '4'}
                   </kbd>
                 </div>
                 <p className="mt-1 text-xs text-muted">Only the {cat.items.filter(cat.isTricky).length} tricky facts — the ones that catch you out.</p>
+              </button>
+            )}
+            {cat.spotPool && (
+              <button
+                onClick={() => start('spot')}
+                className="rounded-lg border border-border bg-subtle/60 p-4 text-left transition-colors hover:border-ink"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Spot the error</span>
+                  <kbd className="rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] text-muted">4</kbd>
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  True or false? Statements use your confusion pairs — 7 × 4 = 32… sure about that?
+                </p>
               </button>
             )}
           </div>
@@ -477,40 +538,75 @@ export default function Quiz({
 
           <div className="py-10 text-center sm:py-14">
             <p className="font-mono text-5xl font-semibold tracking-tight tabular-nums sm:text-6xl md:text-7xl">{q?.text}</p>
-            {cat.hint && <p className="mt-2 text-sm text-faint">{cat.hint}</p>}
+            {mode === 'spot' ? (
+              <p className="mt-2 text-sm text-faint">true or false? — tap fast (keys T / F)</p>
+            ) : (
+              cat.hint && <p className="mt-2 text-sm text-faint">{cat.hint}</p>
+            )}
 
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => onInputChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key !== 'Enter') return
-                e.preventDefault()
-                if (flashActiveRef.current) advance(results)
-                else submit()
-              }}
-              inputMode="decimal"
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              maxLength={10}
-              placeholder="?"
-              aria-label="Your answer"
-              className="mt-6 w-full max-w-56 border-b-2 border-strong bg-transparent pb-2 text-center font-mono text-4xl tabular-nums outline-none transition-colors placeholder:text-faint focus:border-ink"
-            />
+            {mode === 'spot' ? (
+              <div className="mx-auto mt-8 grid max-w-md grid-cols-2 gap-3 px-2">
+                <button
+                  onClick={() => answerSpot(true)}
+                  className="rounded-xl border-2 border-accent bg-goodbg px-4 py-5 text-xl font-bold text-goodink transition-transform active:scale-95 sm:py-6"
+                >
+                  <span className="mr-2 inline-block align-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="inline">
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  </span>
+                  True
+                </button>
+                <button
+                  onClick={() => answerSpot(false)}
+                  className="rounded-xl border-2 border-bad bg-badbg px-4 py-5 text-xl font-bold text-badink transition-transform active:scale-95 sm:py-6"
+                >
+                  <span className="mr-2 inline-block align-middle">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="inline">
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </span>
+                  False
+                </button>
+              </div>
+            ) : (
+              <>
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => onInputChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return
+                    e.preventDefault()
+                    if (flashActiveRef.current) advance(results)
+                    else submit()
+                  }}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  maxLength={10}
+                  placeholder="?"
+                  aria-label="Your answer"
+                  className="mt-6 w-full max-w-56 border-b-2 border-strong bg-transparent pb-2 text-center font-mono text-4xl tabular-nums outline-none transition-colors placeholder:text-faint focus:border-ink"
+                />
+                <div className="-mt-1">
+                  <button onClick={skip} className="px-3 py-1.5 text-sm text-faint transition-colors hover:text-muted">
+                    skip (counts as wrong)
+                  </button>
+                </div>
+              </>
+            )}
 
             <div className="mt-4 h-7 text-center text-lg font-medium" aria-live="polite">
               {flash &&
                 (flash.ok ? (
                   <span className="text-accent">Correct</span>
                 ) : (
-                  <span className="text-bad">Answer: {flash.answer}</span>
+                  <span className="text-bad">{mode === 'spot' ? flash.answer.replace('Answer: ', '') : `Answer: ${flash.answer}`}</span>
                 ))}
             </div>
-
-            <button onClick={skip} className="-mt-1 px-3 py-1.5 text-sm text-faint transition-colors hover:text-muted">
-              skip (counts as wrong)
-            </button>
           </div>
         </div>
       </div>
