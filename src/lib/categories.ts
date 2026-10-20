@@ -427,8 +427,15 @@ export function buildSpotQuestions(pool: readonly string[]): SpotQuestion[] {
     return { key, lo, hi, answer: lo * hi }
   })
   const out: SpotQuestion[] = []
+  const lastSeenAt = new Map<string, number>()
+  let lastFamily = -1
   for (let i = 0; i < SPOT_LENGTH; i++) {
-    const fact = facts[Math.floor(Math.random() * facts.length)]
+    const gapOk = facts.filter((f) => i - (lastSeenAt.get(f.key) ?? -99) >= 3)
+    const eligible = gapOk.filter((f) => f.lo !== lastFamily)
+    const candidates = eligible.length > 0 ? eligible : gapOk.length > 0 ? gapOk : facts
+    const fact = candidates[Math.floor(Math.random() * candidates.length)]
+    lastSeenAt.set(fact.key, i)
+    lastFamily = fact.lo
     const confusables = facts.filter(
       (f) => f.key !== fact.key && f.answer !== fact.answer && f.lo === fact.lo && Math.abs(f.hi - fact.hi) === 1,
     )

@@ -263,8 +263,12 @@ export default function Quiz({
   }
 
   function answerSpot(choice: boolean) {
+    if (flashActiveRef.current) {
+      advance(results)
+      return
+    }
     const q = questions[index]
-    if (!q || flashActiveRef.current) return
+    if (!q) return
     recordResult({
       item: q.item,
       text: q.text,
