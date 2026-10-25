@@ -36,7 +36,11 @@ export async function POST(request: Request) {
   if (!cat) return NextResponse.json({ error: 'Unknown category' }, { status: 400 })
 
   const validItems = new Set(cat.items)
-  if (!data.answers.every((a) => validItems.has(a.item))) {
+  const checkItems = (list: { item: string }[]) =>
+    cat.dynamicItems
+      ? list.every((a) => /^[0-9+]{3,12}$/.test(a.item))
+      : list.every((a) => validItems.has(a.item))
+  if (!checkItems(data.answers)) {
     return NextResponse.json({ error: 'Invalid items for this category' }, { status: 400 })
   }
 

@@ -21,6 +21,8 @@ export type CategoryDef = {
   singleTable?: { min: number; max: number; matches: (item: string, table: number) => boolean }
   disableTrouble?: boolean
   spotPool?: readonly string[]
+  trickyQuestions?: () => { item: string; text: string }[]
+  dynamicItems?: boolean
 }
 
 export const QUICK_LENGTH = 20
@@ -243,6 +245,10 @@ const carryAdd22: CategoryDef = {
     return m ? Number(m[1]) + Number(m[2]) : Number.NaN
   },
   tolerance: 0,
+  disableQuick: true,
+  disableTrouble: true,
+  trickyQuestions: buildCarryTricky20,
+  dynamicItems: true,
 }
 
 const addFactItems: string[] = []
@@ -418,6 +424,60 @@ export function masteryStats(cat: CategoryDef, stats: ItemStats) {
 }
 
 export const SPOT_LENGTH = 15
+
+const randInt = (min: number, max: number) => min + Math.floor(Math.random() * (max - min + 1))
+const has9 = (n: number) => String(n).includes('9')
+
+export function buildCarryTricky20(): { item: string; text: string }[] {
+  const used = new Set<string>()
+
+  const take = (make: () => [number, number]): [number, number] => {
+    for (let i = 0; i < 80; i++) {
+      const [a, b] = make()
+      if (!used.has(`${a}+${b}`) && a >= 10 && a <= 99 && b >= 10 && b <= 99) {
+        used.add(`${a}+${b}`)
+        return [a, b]
+      }
+    }
+    const [a, b] = make()
+    used.add(`${a}+${b}`)
+    return [a, b]
+  }
+
+  const build = (u1: number, u2: number, t1: number, t2: number): [number, number] => [t1 * 10 + u1, t2 * 10 + u2]
+  const unitsWithSum = (sum: number): [number, number] => {
+    const u1 = randInt(Math.max(1, sum - 9), Math.min(9, sum - 1))
+    return [u1, sum - u1]
+  }
+  const boundary = (sum: number) => take(() => {
+    const [u1, u2] = unitsWithSum(sum)
+    return build(u1, u2, randInt(1, 9), randInt(1, 9))
+  })
+  const bigTens = (want9: boolean) =>
+    take(() => {
+      for (let i = 0; i < 200; i++) {
+        const u1 = randInt(1, 9)
+        const u2 = randInt(Math.max(1, 10 - u1), 9)
+        const t1 = randInt(2, 9)
+        const t2 = randInt(Math.max(1, 10 - t1), 9)
+        const a = t1 * 10 + u1
+        const b = t2 * 10 + u2
+        if ((has9(a) || has9(b)) === want9) return [a, b] as [number, number]
+      }
+      return (want9 ? [93, 29] : [86, 57]) as [number, number]
+    })
+
+  const out: { item: string; text: string }[] = []
+  const push = (pair: [number, number]) => out.push({ item: `${pair[0]}+${pair[1]}`, text: `${pair[0]} + ${pair[1]}` })
+
+  for (let i = 0; i < 4; i++) push(boundary(10))
+  for (let i = 0; i < 4; i++) push(boundary(randInt(8, 9)))
+  for (let i = 0; i < 4; i++) push(boundary(randInt(11, 12)))
+  for (let i = 0; i < 4; i++) push(bigTens(false))
+  for (let i = 0; i < 4; i++) push(bigTens(true))
+
+  return shuffle(out)
+}
 
 export type SpotQuestion = { item: string; text: string; isTrue: boolean }
 

@@ -110,6 +110,8 @@ export default function Quiz({
           return
         }
         qs = buildSpotQuestions(cat.spotPool)
+      } else if (mode === 'tricky' && cat.trickyQuestions) {
+        qs = cat.trickyQuestions()
       } else {
         const built = buildQuestions(cat, mode, statsRef.current, n)
         note = built.note
@@ -178,7 +180,7 @@ export default function Quiz({
       } else if (cat.disableQuick) {
         if (e.key === '1') start('full')
         else if (e.key === '2' && !cat.disableTrouble) start('trouble')
-        else if ((cat.disableTrouble ? e.key === '2' : e.key === '3') && cat.isTricky) start('tricky')
+        else if ((cat.disableTrouble ? e.key === '2' : e.key === '3') && (cat.isTricky || cat.trickyQuestions)) start('tricky')
       } else {
         if (e.key === '1') start('full')
         else if (e.key === '2') start('quick')
@@ -462,7 +464,7 @@ export default function Quiz({
                 </p>
               </button>
             )}
-            {cat.isTricky && (
+            {(cat.isTricky || cat.trickyQuestions) && (
               <button
                 onClick={() => start('tricky')}
                 className="rounded-lg border border-warnbg bg-warnbg/40 p-4 text-left transition-colors hover:border-warnink"
@@ -473,7 +475,11 @@ export default function Quiz({
                     {cat.disableQuick ? (cat.disableTrouble ? '2' : '3') : cat.disableTrouble ? '3' : '4'}
                   </kbd>
                 </div>
-                <p className="mt-1 text-xs text-muted">Only the {cat.items.filter(cat.isTricky).length} tricky facts — the ones that catch you out.</p>
+                <p className="mt-1 text-xs text-muted">
+                  {cat.trickyQuestions
+                    ? 'Exactly 20 traps — boundary sums, big tens, the 9s. Random every time.'
+                    : `Only the ${cat.items.filter(cat.isTricky!).length} tricky facts — the ones that catch you out.`}
+                </p>
               </button>
             )}
             {cat.spotPool && (

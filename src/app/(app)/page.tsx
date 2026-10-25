@@ -31,7 +31,7 @@ export default async function HomePage() {
       acc: summary ? fmtRatio(summary.correct, summary.questions) : null,
       mastered: mastery.mastered,
       troubleCount: troubleItems(cat, stats).length,
-      trickyCount: cat.isTricky ? cat.items.filter(cat.isTricky).length : 0,
+      trickyCount: cat.trickyQuestions ? 20 : cat.isTricky ? cat.items.filter(cat.isTricky).length : 0,
       singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max } : null,
       disableTrouble: !!cat.disableTrouble,
       disableQuick: !!cat.disableQuick,
