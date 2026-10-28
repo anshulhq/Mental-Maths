@@ -67,7 +67,7 @@ export default function TablesPage() {
         <p className="mt-0.5 text-xs text-muted">The ones you get wrong most often</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {trickyTableGroups.map((group, gi) => (
-            <div key={gi} className="grid grid-cols-2 gap-1.5 rounded-lg border border-warnbg bg-surface p-1.5">
+            <div key={gi} className={`grid gap-1.5 rounded-lg border border-warnbg bg-surface p-1.5 ${group.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {group.map((fact) => {
                 const [lo, hi] = fact.split('x').map(Number)
                 return (

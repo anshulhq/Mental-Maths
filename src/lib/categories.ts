@@ -313,12 +313,13 @@ const tableMatches = (item: string, table: number) => {
   return hi === table || (lo === table && hi <= 10)
 }
 
-export const trickyTableGroups: readonly (readonly [string, string])[] = [
+export const trickyTableGroups: readonly (readonly string[])[] = [
   ['4x7', '4x6'],
   ['5x8', '5x9'],
   ['6x7', '6x8'],
   ['3x7', '3x8'],
   ['4x8', '4x9'],
+  ['5x7'],
 ]
 export const trickyTableFacts: readonly string[] = trickyTableGroups.flat()
 const trickyTableSet = new Set(trickyTableFacts)
