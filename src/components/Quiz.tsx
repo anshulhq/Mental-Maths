@@ -35,12 +35,12 @@ type QuizResult = {
 const FLASH_CORRECT_MS = 260
 const FLASH_WRONG_MS = 1000
 
-function modeLabel(mode: TestMode, count: number, disableFull?: boolean): string {
+function modeLabel(mode: TestMode, count: number, disableFull?: boolean, singleNoun = 'Table'): string {
   if (mode === 'full') return 'Full test'
   if (mode === 'trouble') return 'Trouble drill'
   if (mode === 'tricky') return 'Tricky drill'
   if (mode === 'spot') return 'Spot the error'
-  if (mode === 'single') return `Table ${count}`
+  if (mode === 'single') return `${singleNoun} ${count}`
   return disableFull ? `Random ${count}` : 'Quick test'
 }
 
@@ -501,9 +501,9 @@ export default function Quiz({
 
         {cat.singleTable && (
           <div className="mt-5 rounded-lg border border-border p-4">
-            <span className="font-medium">Single table</span>
+            <span className="font-medium">Single {cat.singleTable.noun}</span>
             <p className="mt-1 text-xs text-muted">
-              Drill just one table, jumbled — {cat.singleTable.min} × 2 up to {cat.singleTable.max} × 10:
+              Drill just one {cat.singleTable.noun} — {cat.singleTable.min} to {cat.singleTable.max}, jumbled:
             </p>
             <div className="mt-3 grid grid-cols-8 gap-1.5 sm:grid-cols-12">
               {Array.from({ length: cat.singleTable.max - cat.singleTable.min + 1 }, (_, i) => cat.singleTable!.min + i).map((t) => (
@@ -637,7 +637,10 @@ export default function Quiz({
     <div className="rounded-xl border border-border bg-surface p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-semibold tracking-tight">
-          {cat.name} <span className="font-normal text-faint">· {modeLabel(mode, count, cat.disableFull)}</span>
+          {cat.name}{' '}
+          <span className="font-normal text-faint">
+            · {modeLabel(mode, count, cat.disableFull, cat.singleTable ? cat.singleTable.noun[0].toUpperCase() + cat.singleTable.noun.slice(1) : undefined)}
+          </span>
         </h1>
         <Link href="/" className="text-sm text-muted transition-colors hover:text-ink">
           ← All tests
@@ -754,7 +757,12 @@ export default function Quiz({
         )}
       </div>
     </div>
-    <Leaderboard records={activeRecords} disableFull={!!cat.disableFull} glowRank={newRank} />
+    <Leaderboard
+      records={activeRecords}
+      disableFull={!!cat.disableFull}
+      glowRank={newRank}
+      singleNoun={cat.singleTable ? cat.singleTable.noun[0].toUpperCase() + cat.singleTable.noun.slice(1) : undefined}
+    />
     </>
   )
 }

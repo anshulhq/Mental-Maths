@@ -32,7 +32,7 @@ export default async function HomePage() {
       mastered: mastery.mastered,
       troubleCount: troubleItems(cat, stats).length,
       trickyCount: cat.trickyQuestions ? 20 : cat.isTricky ? cat.items.filter(cat.isTricky).length : 0,
-      singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max } : null,
+      singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max, noun: cat.singleTable.noun } : null,
       disableTrouble: !!cat.disableTrouble,
       disableQuick: !!cat.disableQuick,
       hasSpot: !!cat.spotPool,

@@ -18,7 +18,7 @@ export type CategoryDef = {
   quickLengths?: readonly number[]
   answerFor?: (questionText: string) => number
   isTricky?: (item: string) => boolean
-  singleTable?: { min: number; max: number; matches: (item: string, table: number) => boolean }
+  singleTable?: { min: number; max: number; noun: string; matches: (item: string, table: number) => boolean }
   disableTrouble?: boolean
   spotPool?: readonly string[]
   trickyQuestions?: () => { item: string; text: string }[]
@@ -275,6 +275,13 @@ const addFacts: CategoryDef = {
   },
   tolerance: 0,
   disableQuick: true,
+  disableTrouble: true,
+  singleTable: {
+    min: 1,
+    max: 9,
+    noun: 'number',
+    matches: (item, number) => Number(item.split('x')[0]) === number,
+  },
   isTricky: (item) => {
     const [a, b] = item.split('x').map(Number)
     return a + b >= 10
@@ -330,7 +337,7 @@ const tables10: CategoryDef = {
   name: 'Tables 2–10',
   tagline: 'Every table from 2 to 10, up to × 10',
   items: makeTableItems(2, 10),
-  singleTable: { min: 2, max: 10, matches: tableMatches },
+  singleTable: { min: 2, max: 10, noun: 'table', matches: tableMatches },
   isTricky: (item) => trickyTableSet.has(item),
   disableTrouble: true,
   disableQuick: true,
@@ -343,7 +350,7 @@ const tables20: CategoryDef = {
   name: 'Tables 11–20',
   tagline: 'Every table from 11 to 20, up to × 10',
   items: makeTableItems(11, 20),
-  singleTable: { min: 11, max: 20, matches: tableMatches },
+  singleTable: { min: 11, max: 20, noun: 'table', matches: tableMatches },
 }
 
 const fractionItems = [

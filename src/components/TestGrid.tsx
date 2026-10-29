@@ -15,7 +15,7 @@ export type CardVM = {
   mastered: number
   troubleCount: number
   trickyCount: number
-  singleTable: { min: number; max: number } | null
+  singleTable: { min: number; max: number; noun: string } | null
   disableTrouble: boolean
   disableQuick: boolean
   hasSpot: boolean
@@ -258,7 +258,7 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
                   onClick={() => setOpenTable(openTable === c.id ? null : c.id)}
                   className="w-full rounded-lg border border-strong px-2 py-2 text-center font-medium transition-colors hover:border-ink sm:px-3"
                 >
-                  Table ▾
+                  {c.singleTable.noun[0].toUpperCase() + c.singleTable.noun.slice(1)} ▾
                 </button>
                 {openTable === c.id && (
                   <>

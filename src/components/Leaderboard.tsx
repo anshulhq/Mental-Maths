@@ -20,12 +20,12 @@ const TrophyIcon = (
   </svg>
 )
 
-function groupLabel(mode: string, variant: number | null, disableFull: boolean): string {
+function groupLabel(mode: string, variant: number | null, disableFull: boolean, singleNoun = 'Table'): string {
   if (mode === 'full') return 'Full test'
   if (mode === 'trouble') return 'Trouble drill'
   if (mode === 'tricky') return 'Tricky drill'
   if (mode === 'spot') return 'Spot the error'
-  if (mode === 'single') return `Table ${variant ?? ''}`
+  if (mode === 'single') return `${singleNoun} ${variant ?? ''}`
   return disableFull ? `Random ${variant ?? ''}` : 'Quick test'
 }
 
@@ -33,10 +33,12 @@ export default function Leaderboard({
   records,
   disableFull,
   glowRank,
+  singleNoun = 'Table',
 }: {
   records: RecordRow[]
   disableFull: boolean
   glowRank?: number | null
+  singleNoun?: string
 }) {
   const groups = new Map<string, RecordRow[]>()
   for (const r of records) {
@@ -74,7 +76,7 @@ export default function Leaderboard({
           {ordered.map(([key, list]) => (
             <div key={key} className="rounded-lg border border-warnbg/60 bg-surface/80 p-3">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
-                {groupLabel(list[0].mode, list[0].variant, disableFull)}
+                {groupLabel(list[0].mode, list[0].variant, disableFull, singleNoun)}
               </h3>
               <div className="mt-2 space-y-1.5">
                 {list.slice(0, 3).map((r, i) => (
