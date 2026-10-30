@@ -289,6 +289,32 @@ const addFacts: CategoryDef = {
 }
 
 const subtract50 = subtractFrom(50, 50)
+
+const tensJumpItems: string[] = []
+for (let t = 1; t <= 9; t++) {
+  for (let u = 1; u <= 9; u++) {
+    for (let a = 1; a <= 9; a++) tensJumpItems.push(`${t * 10 + u}+${a * 10}`)
+  }
+}
+
+const tensJump: CategoryDef = {
+  id: 'tens-jump',
+  name: 'Tens jump',
+  tagline: 'Add a multiple of 10 instantly — units untouched (34 + 40)',
+  items: tensJumpItems,
+  label: (item) => item,
+  question: (item) => {
+    const [base, addend] = item.split('+')
+    return `${base} + ${addend}`
+  },
+  answer: (item) => {
+    const [base, addend] = item.split('+').map(Number)
+    return base + addend
+  },
+  tolerance: 0,
+  disableFull: true,
+  quickLengths: [10, 20, 30],
+}
 const subtract100 = subtractFrom(100, 100)
 
 const makeTableItems = (from: number, to: number): string[] => {
@@ -374,7 +400,7 @@ const fractions: CategoryDef = {
   hint: 'answer in % — 1 or 2 decimals',
 }
 
-export const categories: readonly CategoryDef[] = [squares, reverseSquares25, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, carryAdd22, addFacts, cubes, tables10, tables20, fractions]
+export const categories: readonly CategoryDef[] = [squares, reverseSquares25, squares100, squares300, squaresEnding5, squaresBig, sqrt2digit, sqrt300, cbrt300, subtract50, subtract100, borrowSubtract, carryAdd, carryAdd22, addFacts, tensJump, cubes, tables10, tables20, fractions]
 
 export function getCategory(id: string | undefined): CategoryDef | undefined {
   return categories.find((c) => c.id === id)
