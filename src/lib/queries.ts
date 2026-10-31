@@ -1,4 +1,4 @@
-import { and, avg, count, desc, eq, gte, sql, sum } from 'drizzle-orm'
+import { and, avg, count, desc, eq, gte, ne, sql, sum } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { answers, attempts, preferences } from '@/db/schema'
 import type { ItemStats } from './categories'
@@ -171,6 +171,7 @@ export async function getRecords(userId: number, categoryId: string): Promise<Re
           eq(attempts.userId, userId),
           eq(attempts.categoryId, categoryId),
           eq(attempts.completed, true),
+          ne(attempts.mode, 'trouble'),
           sql`${attempts.correctCount} = ${attempts.totalQuestions}`,
         ),
       )

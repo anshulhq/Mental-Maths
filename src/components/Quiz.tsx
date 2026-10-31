@@ -12,7 +12,6 @@ import {
   buildSpotQuestions,
   checkAnswer,
   getCategory,
-  troubleItems,
   type ItemStats,
   type TestMode,
 } from '@/lib/categories'
@@ -37,7 +36,6 @@ const FLASH_WRONG_MS = 1000
 
 function modeLabel(mode: TestMode, count: number, disableFull?: boolean, singleNoun = 'Table'): string {
   if (mode === 'full') return 'Full test'
-  if (mode === 'trouble') return 'Trouble drill'
   if (mode === 'tricky') return 'Tricky drill'
   if (mode === 'spot') return 'Spot the error'
   if (mode === 'single') return `${singleNoun} ${count}`
@@ -60,7 +58,6 @@ export default function Quiz({
   const cat = getCategory(categoryId)
 
   const [phase, setPhase] = useState<Phase>('menu')
-  const [stats, setStats] = useState<ItemStats>(initialStats)
   const [mode, setMode] = useState<TestMode>('full')
   const [count, setCount] = useState(0)
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
@@ -83,8 +80,6 @@ export default function Quiz({
   const statsRef = useRef<ItemStats>(initialStats)
   const autoStartedRef = useRef(false)
   const lastSaveRef = useRef<(() => Promise<boolean>) | null>(null)
-
-  const troubleCount = useMemo(() => (cat ? troubleItems(cat, stats).length : 0), [cat, stats])
 
   const activeRecords = useMemo(() => {
     if (phase === 'menu' || !cat) return records
@@ -176,16 +171,14 @@ export default function Quiz({
       if (cat.disableFull && cat.quickLengths) {
         const idx = ['1', '2', '3'].indexOf(e.key)
         if (idx >= 0 && cat.quickLengths[idx]) start('quick', cat.quickLengths[idx])
-        else if (e.key === '4') start('trouble')
       } else if (cat.disableQuick) {
         if (e.key === '1') start('full')
-        else if (e.key === '2' && !cat.disableTrouble) start('trouble')
-        else if ((cat.disableTrouble ? e.key === '2' : e.key === '3') && (cat.isTricky || cat.trickyQuestions)) start('tricky')
+        else if (e.key === '2' && (cat.isTricky || cat.trickyQuestions)) start('tricky')
+        else if (e.key === '3' && cat.spotPool) start('spot')
       } else {
         if (e.key === '1') start('full')
         else if (e.key === '2') start('quick')
-        else if (e.key === '3') start(cat.disableTrouble ? 'tricky' : 'trouble')
-        else if (e.key === '4' && cat.isTricky && !cat.disableTrouble) start('tricky')
+        else if (e.key === '3' && (cat.isTricky || cat.trickyQuestions)) start('tricky')
         else if (e.key === '4' && cat.spotPool) start('spot')
       }
     }
@@ -288,7 +281,6 @@ export default function Quiz({
       next[r.item] = { attempts: s.attempts + 1, correct: s.correct + (r.isCorrect ? 1 : 0) }
     }
     statsRef.current = next
-    setStats(next)
   }
 
   function finish(list: QuizResult[]) {
@@ -409,19 +401,6 @@ export default function Quiz({
                 ))}
               </div>
             </div>
-            <button
-              onClick={() => start('trouble')}
-              disabled={troubleCount === 0}
-              className="rounded-lg border border-border p-4 text-left transition-colors enabled:hover:border-ink enabled:hover:bg-subtle disabled:opacity-45"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Trouble drill</span>
-                <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">4</kbd>
-              </div>
-              <p className="mt-1 text-xs text-muted">
-                {troubleCount > 0 ? `${troubleCount} weak item${troubleCount === 1 ? '' : 's'} you keep missing.` : 'No weak items yet — take a random drill first.'}
-              </p>
-            </button>
           </div>
         ) : (
           <div className={`mt-5 grid gap-3 sm:grid-cols-2 ${cat.isTricky ? 'lg:grid-cols-4' : 'sm:grid-cols-3'}`}>
@@ -447,23 +426,6 @@ export default function Quiz({
                 <p className="mt-1 text-xs text-muted">{quickLength} random items. Fast daily drill.</p>
               </button>
             )}
-            {!cat.disableTrouble && (
-              <button
-                onClick={() => start('trouble')}
-                disabled={troubleCount === 0}
-                className="rounded-lg border border-border p-4 text-left transition-colors enabled:hover:border-ink enabled:hover:bg-subtle disabled:opacity-45"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Trouble drill</span>
-                  <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">
-                    {cat.disableQuick ? '2' : '3'}
-                  </kbd>
-                </div>
-                <p className="mt-1 text-xs text-muted">
-                  {troubleCount > 0 ? `${troubleCount} weak item${troubleCount === 1 ? '' : 's'} you keep missing.` : 'No weak items yet — take a test first.'}
-                </p>
-              </button>
-            )}
             {(cat.isTricky || cat.trickyQuestions) && (
               <button
                 onClick={() => start('tricky')}
@@ -472,7 +434,7 @@ export default function Quiz({
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-warnink">Tricky drill</span>
                   <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">
-                    {cat.disableQuick ? (cat.disableTrouble ? '2' : '3') : cat.disableTrouble ? '3' : '4'}
+                    {cat.disableQuick ? '2' : '3'}
                   </kbd>
                 </div>
                 <p className="mt-1 text-xs text-muted">
@@ -731,14 +693,6 @@ export default function Quiz({
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        {troubleCount > 0 && (
-          <button
-            onClick={() => start('trouble')}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-onprimary transition-opacity hover:opacity-90"
-          >
-            Drill {troubleCount} trouble item{troubleCount === 1 ? '' : 's'}
-          </button>
-        )}
         <button
           onClick={() => start(mode, mode === 'quick' || mode === 'single' ? count : undefined)}
           className="rounded-lg border border-strong px-4 py-2 text-sm font-medium transition-colors hover:border-ink"

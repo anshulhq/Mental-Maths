@@ -134,7 +134,7 @@ export default async function StatsPage() {
               return (
                 <Link
                   key={`${categoryId}:${item}`}
-                  href={`/test/${categoryId}?mode=trouble`}
+                  href={`/test/${categoryId}?mode=full`}
                   title={`${attempts} attempts`}
                   className={`rounded-md px-2.5 py-1.5 text-sm font-mono transition-opacity hover:opacity-80 ${
                     severe ? 'bg-badbg text-badink' : 'bg-warnbg text-warnink'

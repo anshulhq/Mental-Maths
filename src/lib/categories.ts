@@ -1,4 +1,4 @@
-export type TestMode = 'full' | 'quick' | 'trouble' | 'tricky' | 'single' | 'spot'
+export type TestMode = 'full' | 'quick' | 'tricky' | 'single' | 'spot'
 
 export type ItemStat = { attempts: number; correct: number }
 export type ItemStats = Record<string, ItemStat>
@@ -19,7 +19,6 @@ export type CategoryDef = {
   answerFor?: (questionText: string) => number
   isTricky?: (item: string) => boolean
   singleTable?: { min: number; max: number; noun: string; matches: (item: string, table: number) => boolean }
-  disableTrouble?: boolean
   spotPool?: readonly string[]
   trickyQuestions?: () => { item: string; text: string }[]
   dynamicItems?: boolean
@@ -246,7 +245,6 @@ const carryAdd22: CategoryDef = {
   },
   tolerance: 0,
   disableQuick: true,
-  disableTrouble: true,
   trickyQuestions: buildCarryTricky20,
   dynamicItems: true,
 }
@@ -275,7 +273,6 @@ const addFacts: CategoryDef = {
   },
   tolerance: 0,
   disableQuick: true,
-  disableTrouble: true,
   singleTable: {
     min: 1,
     max: 9,
@@ -365,7 +362,6 @@ const tables10: CategoryDef = {
   items: makeTableItems(2, 10),
   singleTable: { min: 2, max: 10, noun: 'table', matches: tableMatches },
   isTricky: (item) => trickyTableSet.has(item),
-  disableTrouble: true,
   disableQuick: true,
   spotPool: trickyTableFacts,
 }
@@ -429,20 +425,6 @@ export function shuffle<T>(list: readonly T[]): T[] {
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
   return arr
-}
-
-export function troubleItems(cat: CategoryDef, stats: ItemStats): string[] {
-  return cat.items
-    .filter((item) => {
-      const s = stats[item]
-      return !!s && s.attempts > 0 && s.correct / s.attempts < TROUBLE_ACCURACY
-    })
-    .sort((a, b) => {
-      const sa = stats[a]
-      const sb = stats[b]
-      return sa.correct / sa.attempts - sb.correct / sb.attempts || sb.attempts - sa.attempts
-    })
-    .slice(0, TROUBLE_CAP)
 }
 
 export function masteryStats(cat: CategoryDef, stats: ItemStats) {
@@ -563,7 +545,7 @@ export function buildQuestions(
     if (!spec) return { items: shuffle(cat.items) }
     const table = n ?? spec.min
     if (table < spec.min || table > spec.max) {
-      return { items: [], note: `Pick a table between ${spec.min} and ${spec.max}.` }
+      return { items: [], note: `Pick a ${spec.noun} between ${spec.min} and ${spec.max}.` }
     }
     return { items: shuffle(cat.items.filter((item) => spec.matches(item, table))) }
   }
@@ -572,9 +554,5 @@ export function buildQuestions(
     const length = Math.min(n ?? defaultQuickLength(cat), cat.items.length)
     return { items: shuffle(cat.items).slice(0, length) }
   }
-  const troubled = troubleItems(cat, stats)
-  if (troubled.length === 0) {
-    return { items: [], note: 'No trouble items yet. Take a random or full test first so I can learn what to drill.' }
-  }
-  return { items: shuffle(troubled) }
+  return { items: shuffle(cat.items) }
 }

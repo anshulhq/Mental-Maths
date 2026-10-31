@@ -13,10 +13,8 @@ export type CardVM = {
   tests: number
   acc: string | null
   mastered: number
-  troubleCount: number
   trickyCount: number
   singleTable: { min: number; max: number; noun: string } | null
-  disableTrouble: boolean
   disableQuick: boolean
   hasSpot: boolean
 }
@@ -221,19 +219,11 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
                 </Link>
               ))}
             </div>
-            {c.troubleCount > 0 && (
-              <Link
-                href={`/test/${c.id}?mode=trouble`}
-                className="mt-2 block rounded-lg border border-badbg bg-badbg px-3 py-2 text-center text-xs font-medium text-badink transition-colors hover:border-badink sm:text-sm"
-              >
-                Trouble · {c.troubleCount}
-              </Link>
-            )}
           </>
         ) : (
           <div
             className={`mt-4 grid gap-2 self-end text-xs sm:text-sm ${
-              1 + (c.disableQuick ? 0 : 1) + (c.trickyCount > 0 ? 1 : 0) + (c.disableTrouble ? 0 : 1) + (c.singleTable ? 1 : 0) >= 4
+              1 + (c.disableQuick ? 0 : 1) + (c.trickyCount > 0 ? 1 : 0) + (c.singleTable ? 1 : 0) >= 4
                 ? 'grid-cols-2 sm:grid-cols-4'
                 : 'grid-cols-3'
             }`}
@@ -297,19 +287,6 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
                 Spot error
               </Link>
             )}
-            {!c.disableTrouble &&
-              (c.troubleCount > 0 ? (
-                <Link
-                  href={`/test/${c.id}?mode=trouble`}
-                  className="rounded-lg border border-badbg bg-badbg px-2 py-2 text-center font-medium text-badink transition-colors hover:border-badink sm:px-3"
-                >
-                  Trouble · {c.troubleCount}
-                </Link>
-              ) : (
-                <span className="cursor-not-allowed rounded-lg border border-border px-2 py-2 text-center font-medium text-faint sm:px-3">
-                  Trouble · 0
-                </span>
-              ))}
           </div>
         )}
       </>

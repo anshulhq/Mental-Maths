@@ -1,13 +1,12 @@
 # Mental Maths
 
-A fast, keyboard-first mental maths trainer for SSC CGL prep. Squares, cubes, tables and fraction→% drills with full/quick/**trouble** modes, per-item mastery tracking, a GitHub-style activity heatmap, streaks and detailed stats.
+A fast, keyboard-first mental maths trainer for SSC CGL prep. Squares, cubes, tables and fraction→% drills with full/quick/tricky modes, per-item mastery tracking, a GitHub-style activity heatmap, streaks and detailed stats.
 
 ## Features
 
-- **Test categories** — Squares 1–25 / 1–100 / 1–300 + their reverse, Squares ending in 5 (up to 125²), Squares 101–1000 (random 10/20/30), Square roots 2-digit & 1–300, Cube roots 1–300 (random), 50 − n, 100 − n, Borrow subtraction, Carry addition (1- and 2-digit variants), Addition facts 1–9 (all 81 pairs, with a Tricky mode), Cubes 1–15, Tables 2–10 (with the 10 tricky facts) & Tables 11–20, Fractions → % (add your own in `src/lib/categories.ts`)
+- **Test categories** — Squares 1–25 / 1–100 / 1–300 + their reverse, Squares ending in 5 (up to 125²), Squares 101–1000 (random 10/20/30), Square roots 2-digit & 1–300, Cube roots 1–300 (random), 50 − n, 100 − n, Borrow subtraction, Carry addition (1- and 2-digit variants), Addition facts 1–9 (81 pairs, tricky + number picker), Tens jump, Cubes 1–15, Tables 2–10 (tricky facts + spot-the-error) & Tables 11–20, Fractions → % (add your own in `src/lib/categories.ts`)
 - **Full test** — every item, jumbled
 - **Quick test** — 20 random items
-- **Trouble drill** — automatically drills the items you keep getting wrong (accuracy < 80%)
 - Instant feedback, per-question timing, end-of-test report with misses and slowest answers
 - GitHub-style practice heatmap, streaks, mastery bars, weakest-items view
 - Simple username/password auth, one account (or more) — data lives in Postgres
@@ -104,7 +103,7 @@ const squareRoots: CategoryDef = {
 }
 ```
 
-Everything else (quiz, trouble tracking, heatmap, stats) picks it up automatically.
+Everything else (quiz, heatmap, stats) picks it up automatically.
 
 ## Tech
 

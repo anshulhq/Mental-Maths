@@ -2,7 +2,7 @@ import Heatmap from '@/components/Heatmap'
 import LifetimeBanner from '@/components/LifetimeBanner'
 import TestGrid, { type CardVM } from '@/components/TestGrid'
 import { requireSession } from '@/lib/auth'
-import { QUICK_LENGTH, categories, masteryStats, troubleItems } from '@/lib/categories'
+import { QUICK_LENGTH, categories, masteryStats } from '@/lib/categories'
 import { fmtRatio } from '@/lib/format'
 import { getAllItemStats, getCategorySummaries, getPinnedOrder, getPracticeDays, getTotalPracticeMs } from '@/lib/queries'
 
@@ -30,10 +30,8 @@ export default async function HomePage() {
       tests: summary?.tests ?? 0,
       acc: summary ? fmtRatio(summary.correct, summary.questions) : null,
       mastered: mastery.mastered,
-      troubleCount: troubleItems(cat, stats).length,
       trickyCount: cat.trickyQuestions ? 20 : cat.isTricky ? cat.items.filter(cat.isTricky).length : 0,
       singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max, noun: cat.singleTable.noun } : null,
-      disableTrouble: !!cat.disableTrouble,
       disableQuick: !!cat.disableQuick,
       hasSpot: !!cat.spotPool,
     }
