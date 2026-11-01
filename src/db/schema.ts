@@ -84,7 +84,19 @@ export const customQuestions = pgTable(
     categoryId: text('category_id').notNull(),
     question: text('question').notNull(),
     answer: text('answer').notNull(),
+    builtin: boolean('builtin').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index('custom_questions_user_category_idx').on(t.userId, t.categoryId)],
+)
+
+export const trickySeeded = pgTable(
+  'tricky_seeded',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    categoryId: text('category_id').notNull(),
+  },
+  (t) => [index('tricky_seeded_pk_idx').on(t.userId, t.categoryId)],
 )

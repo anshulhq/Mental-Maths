@@ -4,10 +4,11 @@ import TestGrid, { type CardVM } from '@/components/TestGrid'
 import { requireSession } from '@/lib/auth'
 import { QUICK_LENGTH, categories, masteryStats } from '@/lib/categories'
 import { fmtRatio } from '@/lib/format'
-import { getAllItemStats, getCategorySummaries, getCustomCounts, getPinnedOrder, getPracticeDays, getTotalPracticeMs } from '@/lib/queries'
+import { getAllItemStats, getCategorySummaries, getCustomCounts, getPinnedOrder, getPracticeDays, getTotalPracticeMs, ensureTrickySeeded } from '@/lib/queries'
 
 export default async function HomePage() {
   const session = await requireSession()
+  await ensureTrickySeeded(session.userId)
   const [days, summaries, allItemStats, pinnedOrder, totalMs, customCounts] = await Promise.all([
     getPracticeDays(session.userId),
     getCategorySummaries(session.userId),
@@ -31,10 +32,10 @@ export default async function HomePage() {
       tests: summary?.tests ?? 0,
       acc: summary ? fmtRatio(summary.correct, summary.questions) : null,
       mastered: mastery.mastered,
-      trickyCount: cat.trickyQuestions ? 20 : cat.isTricky ? cat.items.filter(cat.isTricky).length : 0,
       singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max, noun: cat.singleTable.noun } : null,
       disableQuick: !!cat.disableQuick,
       hasSpot: !!cat.spotPool,
+      hasBuiltinTricky: !!cat.builtinTricky,
       customCount: customCounts[cat.id] ?? 0,
     }
   })

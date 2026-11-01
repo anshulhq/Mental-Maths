@@ -17,11 +17,10 @@ export type CategoryDef = {
   disableQuick?: boolean
   quickLengths?: readonly number[]
   answerFor?: (questionText: string) => number
-  isTricky?: (item: string) => boolean
   singleTable?: { min: number; max: number; noun: string; matches: (item: string, table: number) => boolean }
   spotPool?: readonly string[]
-  trickyQuestions?: () => { item: string; text: string }[]
   dynamicItems?: boolean
+  builtinTricky?: () => { question: string; answer: string }[]
 }
 
 export const QUICK_LENGTH = 20
@@ -86,7 +85,7 @@ const squaresBig: CategoryDef = {
   answer: (n) => Number(n) ** 2,
   tolerance: 0,
   disableFull: true,
-  quickLengths: [10, 20, 30],
+  quickLengths: [20],
 }
 
 const sqrt2digit: CategoryDef = {
@@ -99,7 +98,7 @@ const sqrt2digit: CategoryDef = {
   answer: (n) => Number(n),
   tolerance: 0,
   disableFull: true,
-  quickLengths: [10, 20, 30],
+  quickLengths: [20],
 }
 
 const cubes: CategoryDef = {
@@ -146,7 +145,7 @@ const cbrt300: CategoryDef = {
   answer: (n) => Number(n),
   tolerance: 0,
   disableFull: true,
-  quickLengths: [10, 20, 30],
+  quickLengths: [20],
 }
 
 const subtractFrom = (base: number, max: number): CategoryDef => ({
@@ -245,7 +244,11 @@ const carryAdd22: CategoryDef = {
   },
   tolerance: 0,
   disableQuick: true,
-  trickyQuestions: buildCarryTricky20,
+  builtinTricky: () =>
+    buildCarryTricky20().map((g) => {
+      const [a, b] = g.item.split('+').map(Number)
+      return { question: g.text, answer: String(a + b) }
+    }),
   dynamicItems: true,
 }
 
@@ -279,10 +282,13 @@ const addFacts: CategoryDef = {
     noun: 'number',
     matches: (item, number) => Number(item.split('x')[0]) === number,
   },
-  isTricky: (item) => {
-    const [a, b] = item.split('x').map(Number)
-    return a + b >= 10
-  },
+  builtinTricky: () =>
+    addFactItems
+      .map((key) => {
+        const [a, b] = key.split('x').map(Number)
+        return { question: `${a} + ${b}`, answer: String(a + b) }
+      })
+      .filter((q) => Number(q.answer) >= 10),
 }
 
 const subtract50 = subtractFrom(50, 50)
@@ -310,7 +316,7 @@ const tensJump: CategoryDef = {
   },
   tolerance: 0,
   disableFull: true,
-  quickLengths: [10, 20, 30],
+  quickLengths: [20],
 }
 const subtract100 = subtractFrom(100, 100)
 
@@ -352,7 +358,6 @@ export const trickyTableGroups: readonly (readonly string[])[] = [
   ['5x7'],
 ]
 export const trickyTableFacts: readonly string[] = trickyTableGroups.flat()
-const trickyTableSet = new Set(trickyTableFacts)
 
 const tables10: CategoryDef = {
   ...tableBase,
@@ -361,9 +366,13 @@ const tables10: CategoryDef = {
   tagline: 'Every table from 2 to 10, up to × 10',
   items: makeTableItems(2, 10),
   singleTable: { min: 2, max: 10, noun: 'table', matches: tableMatches },
-  isTricky: (item) => trickyTableSet.has(item),
   disableQuick: true,
   spotPool: trickyTableFacts,
+  builtinTricky: () =>
+    trickyTableFacts.map((key) => {
+      const [lo, hi] = key.split('x').map(Number)
+      return { question: `${hi} × ${lo}`, answer: String(lo * hi) }
+    }),
 }
 
 const tables20: CategoryDef = {
@@ -536,10 +545,6 @@ export function buildQuestions(
   n?: number,
 ): { items: string[]; note?: string } {
   if (mode === 'full') return { items: shuffle(cat.items) }
-  if (mode === 'tricky') {
-    if (!cat.isTricky) return { items: shuffle(cat.items) }
-    return { items: shuffle(cat.items.filter((item) => cat.isTricky!(item))) }
-  }
   if (mode === 'single') {
     const spec = cat.singleTable
     if (!spec) return { items: shuffle(cat.items) }

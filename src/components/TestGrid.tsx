@@ -14,10 +14,10 @@ export type CardVM = {
   tests: number
   acc: string | null
   mastered: number
-  trickyCount: number
   singleTable: { min: number; max: number; noun: string } | null
   disableQuick: boolean
   hasSpot: boolean
+  hasBuiltinTricky: boolean
   customCount: number
 }
 
@@ -68,6 +68,7 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
   const [modalBusy, setModalBusy] = useState(false)
   const [modalError, setModalError] = useState<string | null>(null)
   const [modalAdded, setModalAdded] = useState(false)
+  const questionInputRef = useRef<HTMLInputElement>(null)
   const dragRef = useRef<DragInfo | null>(null)
   const movedRef = useRef(false)
   const cleanupRef = useRef<(() => void) | null>(null)
@@ -233,7 +234,7 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Link href={`/test/${c.id}`} className="hidden text-xs text-faint transition-colors hover:text-ink sm:inline">
-              details →
+              details
             </Link>
             {interactive ? (
               <>
@@ -278,23 +279,20 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
         </div>
 
         {c.randomMode ? (
-          <>
-            <div className="mt-4 grid grid-cols-3 gap-2 self-end text-xs sm:text-sm">
-              {c.lengths.map((l, i) => (
-                <Link
-                  key={l}
-                  href={`/test/${c.id}?mode=quick&n=${l}`}
-                  className={`rounded-lg px-2 py-2 text-center font-medium sm:px-3 ${
-                    i === 1
-                      ? 'bg-primary text-onprimary transition-opacity hover:opacity-85'
-                      : 'border border-strong transition-colors hover:border-ink'
-                  }`}
-                >
-                  Random · {l}
-                </Link>
-              ))}
-            </div>
-          </>
+          <div className="mt-4 grid grid-cols-2 gap-2 self-end text-xs sm:text-sm">
+            <Link
+              href={`/test/${c.id}?mode=quick&n=${c.lengths[0]}`}
+              className="rounded-lg bg-primary px-2 py-2 text-center font-medium text-onprimary transition-opacity hover:opacity-85 sm:px-3"
+            >
+              Random · {c.lengths[0]}
+            </Link>
+            <Link
+              href={`/test/${c.id}?mode=tricky`}
+              className="rounded-lg border border-warnbg bg-warnbg px-2 py-2 text-center font-medium text-warnink transition-colors hover:border-warnink sm:px-3"
+            >
+              Tricky · {c.customCount}
+            </Link>
+          </div>
         ) : (
           <div
             className={`mt-4 grid gap-2 self-end text-xs sm:text-sm ${
@@ -350,7 +348,7 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
               href={`/test/${c.id}?mode=tricky`}
               className="rounded-lg border border-warnbg bg-warnbg px-2 py-2 text-center font-medium text-warnink transition-colors hover:border-warnink sm:px-3"
             >
-              Tricky · {c.trickyCount + c.customCount}
+              Tricky · {c.customCount}
             </Link>
             {c.hasSpot && (
               <Link
@@ -416,12 +414,30 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
 
                 <div className="mt-4 space-y-2">
                   <input
+                    ref={questionInputRef}
                     value={modalQuestion}
-                    onChange={(e) => setModalQuestion(e.target.value)}
-                    placeholder="question — e.g. 17 + 6 or √144"
+                    onChange={(e) => setModalQuestion(e.target.value.replace(/\^2/g, '²').replace(/\^3/g, '³'))}
+                    placeholder="question — e.g. 12^2 or √144"
                     maxLength={60}
                     className="w-full rounded-lg border border-strong bg-transparent px-3 py-2 text-sm outline-none focus:border-ink"
                   />
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] text-faint">insert:</span>
+                    {['²', '³', '√', '×', '−'].map((sym) => (
+                      <button
+                        key={sym}
+                        type="button"
+                        onClick={() => {
+                          setModalQuestion((prev) => prev + sym)
+                          questionInputRef.current?.focus()
+                        }}
+                        className="rounded border border-border px-2 py-0.5 font-mono text-xs transition-colors hover:bg-subtle"
+                      >
+                        {sym}
+                      </button>
+                    ))}
+                    <span className="text-[10px] text-faint">or type 12^2 / 5^3</span>
+                  </div>
                   <input
                     value={modalAnswer}
                     onChange={(e) => setModalAnswer(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1'))}
@@ -445,6 +461,33 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
                     {modalAdded && <span className="text-xs text-accent">added ✓</span>}
                     <span className="ml-auto text-xs text-faint">{modalList.length} saved</span>
                   </div>
+                  {target?.hasBuiltinTricky && (
+                    <button
+                      onClick={() => {
+                        if (modalBusy || !addFor) return
+                        setModalBusy(true)
+                        void fetch('/api/questions/restore', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ categoryId: addFor }),
+                        })
+                          .then(async (res) => {
+                            if (!res.ok) return
+                            const list = await fetch(`/api/questions?categoryId=${addFor}`)
+                              .then((r) => r.json())
+                              .catch(() => ({ questions: [] }))
+                            setModalList(list.questions ?? [])
+                            router.refresh()
+                          })
+                          .catch(() => {})
+                          .finally(() => setModalBusy(false))
+                      }}
+                      disabled={modalBusy}
+                      className="text-xs text-muted underline underline-offset-2 transition-colors hover:text-ink disabled:opacity-50"
+                    >
+                      restore built-in tricky set
+                    </button>
+                  )}
                 </div>
 
                 {modalList.length > 0 && (

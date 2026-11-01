@@ -1,7 +1,7 @@
 import { and, avg, count, desc, eq, gte, ne, sql, sum } from 'drizzle-orm'
 import { getDb } from '@/db'
-import { answers, attempts, customQuestions, preferences } from '@/db/schema'
-import type { ItemStats } from './categories'
+import { answers, attempts, customQuestions, preferences, trickySeeded } from '@/db/schema'
+import { categories, type ItemStats } from './categories'
 
 export type DayRow = { date: string; tests: number; questions: number; correct: number }
 export type CategorySummary = {
@@ -200,6 +200,32 @@ export async function getTotalPracticeMs(userId: number): Promise<number> {
   } catch (err) {
     console.error('getTotalPracticeMs failed — run npm run db:push', err)
     return 0
+  }
+}
+
+export async function ensureTrickySeeded(userId: number, categoryId?: string): Promise<void> {
+  try {
+    const db = await getDb()
+    const cats = categories.filter((c) => c.builtinTricky && (!categoryId || c.id === categoryId))
+    for (const cat of cats) {
+      const marker = await db
+        .select({ userId: trickySeeded.userId })
+        .from(trickySeeded)
+        .where(and(eq(trickySeeded.userId, userId), eq(trickySeeded.categoryId, cat.id)))
+        .limit(1)
+      if (marker.length > 0) continue
+      const rows = cat.builtinTricky!().map((q) => ({
+        userId,
+        categoryId: cat.id,
+        question: q.question,
+        answer: q.answer,
+        builtin: true,
+      }))
+      if (rows.length > 0) await db.insert(customQuestions).values(rows)
+      await db.insert(trickySeeded).values({ userId, categoryId: cat.id })
+    }
+  } catch (err) {
+    console.error('ensureTrickySeeded failed — run npm run db:push', err)
   }
 }
 

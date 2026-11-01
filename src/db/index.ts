@@ -56,9 +56,16 @@ create table if not exists custom_questions (
   category_id text not null,
   question text not null,
   answer text not null,
+  builtin boolean not null default false,
   created_at timestamptz not null default now()
 );
 create index if not exists custom_questions_user_category_idx on custom_questions (user_id, category_id);
+alter table custom_questions add column if not exists builtin boolean not null default false;
+create table if not exists tricky_seeded (
+  user_id integer not null references users(id) on delete cascade,
+  category_id text not null
+);
+create index if not exists tricky_seeded_pk_idx on tricky_seeded (user_id, category_id);
 `
 
 async function initDb(): Promise<Db> {

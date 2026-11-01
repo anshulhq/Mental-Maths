@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Quiz from '@/components/Quiz'
 import { requireSession } from '@/lib/auth'
 import { getCategory, type ItemStat, type TestMode } from '@/lib/categories'
-import { getItemStatsForCategory, getCustomQuestions, getRecords } from '@/lib/queries'
+import { ensureTrickySeeded, getItemStatsForCategory, getCustomQuestions, getRecords } from '@/lib/queries'
 
 function cellClass(stat: ItemStat | undefined): string {
   if (!stat || stat.attempts === 0) return 'bg-subtle text-faint'
@@ -28,6 +28,7 @@ export default async function TestPage(props: PageProps<'/test/[categoryId]'>) {
   const initialCount = Number.isInteger(nParam) && nParam >= 1 && nParam <= 1000 ? nParam : undefined
 
   const session = await requireSession()
+  await ensureTrickySeeded(session.userId, cat.id)
   const [itemStats, records, customQuestions] = await Promise.all([
     getItemStatsForCategory(session.userId, cat.id),
     getRecords(session.userId, cat.id),

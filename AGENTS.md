@@ -10,4 +10,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Project rules
 
-- Every test category must support user-added custom Tricky questions: they live in the `custom_questions` table and merge into that category's Tricky drill automatically (see `customQuestions` prop on `Quiz` and the `+` button in `TestGrid`). Any new test added to `src/lib/categories.ts` inherits this wiring — keep it intact.
+- Every test category must support user-added custom Tricky questions: they live in the `custom_questions` table and power that category's Tricky drill (see `customQuestions` prop on `Quiz` and the `+` button in `TestGrid`). Categories with a built-in tricky set declare `builtinTricky` in `src/lib/categories.ts`; those rows are seeded into the user's `custom_questions` (flagged `builtin`) on first visit and are editable/deletable like any other. Any new test added to `src/lib/categories.ts` inherits this wiring — keep it intact.

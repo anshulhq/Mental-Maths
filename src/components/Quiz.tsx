@@ -12,7 +12,6 @@ import {
   buildSpotQuestions,
   checkAnswer,
   getCategory,
-  shuffle,
   type ItemStats,
   type TestMode,
 } from '@/lib/categories'
@@ -116,17 +115,11 @@ export default function Quiz({
         }
         qs = buildSpotQuestions(cat.spotPool)
       } else if (mode === 'tricky') {
-        const customs: QuizQuestion[] = customQuestions.map((cq) => ({
+        qs = customQuestions.map((cq) => ({
           item: `custom:${cq.id}`,
           text: cq.question,
           customAnswer: cq.answer,
         }))
-        const builtin: QuizQuestion[] = cat.trickyQuestions
-          ? cat.trickyQuestions()
-          : cat.isTricky
-            ? cat.items.filter((item) => cat.isTricky!(item)).map((item) => ({ item, text: cat.question(item) }))
-            : []
-        qs = shuffle([...customs, ...builtin])
         if (qs.length === 0) {
           setMenuNote('No tricky questions yet — add your own with the yellow + button on the test card.')
           return
@@ -195,6 +188,7 @@ export default function Quiz({
       if (cat.disableFull && cat.quickLengths) {
         const idx = ['1', '2', '3'].indexOf(e.key)
         if (idx >= 0 && cat.quickLengths[idx]) start('quick', cat.quickLengths[idx])
+        else if (e.key === '2') start('tricky')
       } else if (cat.disableQuick) {
         if (e.key === '1') start('full')
         else if (e.key === '2') start('tricky')
@@ -416,9 +410,9 @@ export default function Quiz({
             <div className="rounded-lg border border-border p-4">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Random drill</span>
-                <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">1–3</kbd>
+                <kbd className="rounded border border-border bg-subtle px-1.5 py-0.5 text-[10px] text-muted">1</kbd>
               </div>
-              <p className="mt-1 text-xs text-muted">Jumbled questions from the full range — pick a length:</p>
+              <p className="mt-1 text-xs text-muted">Jumbled questions from the full range:</p>
               <div className="mt-3 flex gap-2">
                 {randomLengths.map((l, i) => (
                   <button
@@ -432,9 +426,23 @@ export default function Quiz({
                 ))}
               </div>
             </div>
+            <button
+              onClick={() => start('tricky')}
+              className="rounded-lg border border-warnbg bg-warnbg/40 p-4 text-left transition-colors hover:border-warnink"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-warnink">Tricky drill</span>
+                <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">2</kbd>
+              </div>
+              <p className="mt-1 text-xs text-muted">
+                {customQuestions.length > 0
+                  ? `${customQuestions.length} questions in your tricky bank.`
+                  : 'Empty — add your own with the yellow + on the test card.'}
+              </p>
+            </button>
           </div>
         ) : (
-          <div className={`mt-5 grid gap-3 sm:grid-cols-2 ${cat.isTricky ? 'lg:grid-cols-4' : 'sm:grid-cols-3'}`}>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <button
               onClick={() => start('full')}
               className="rounded-lg border border-border p-4 text-left transition-colors hover:border-ink hover:bg-subtle"
@@ -468,13 +476,9 @@ export default function Quiz({
                 </kbd>
               </div>
               <p className="mt-1 text-xs text-muted">
-                {cat.trickyQuestions
-                  ? `${customQuestions.length} of yours + 20 generated traps — boundary sums, big tens, the 9s.`
-                  : cat.isTricky
-                    ? `${customQuestions.length} of yours + ${cat.items.filter(cat.isTricky!).length} built-in tricky facts.`
-                    : customQuestions.length > 0
-                      ? `Your ${customQuestions.length} custom questions.`
-                      : 'Empty — add your own with the yellow + on the test card.'}
+                {customQuestions.length > 0
+                  ? `${customQuestions.length} questions in your tricky bank — edit them with the yellow + on the test card.`
+                  : 'Empty — add your own with the yellow + on the test card.'}
               </p>
             </button>
             {cat.spotPool && (
