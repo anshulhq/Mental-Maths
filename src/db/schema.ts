@@ -73,3 +73,18 @@ export const notes = pgTable(
   },
   (t) => [index('notes_user_idx').on(t.userId)],
 )
+
+export const customQuestions = pgTable(
+  'custom_questions',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    categoryId: text('category_id').notNull(),
+    question: text('question').notNull(),
+    answer: text('answer').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index('custom_questions_user_category_idx').on(t.userId, t.categoryId)],
+)

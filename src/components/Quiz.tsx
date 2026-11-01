@@ -12,6 +12,7 @@ import {
   buildSpotQuestions,
   checkAnswer,
   getCategory,
+  shuffle,
   type ItemStats,
   type TestMode,
 } from '@/lib/categories'
@@ -21,7 +22,14 @@ import type { RecordRow } from '@/lib/queries'
 type Phase = 'menu' | 'quiz' | 'report'
 type SaveState = 'saving' | 'saved' | 'error'
 
-type QuizQuestion = { item: string; text: string; isTrue?: boolean }
+type QuizQuestion = { item: string; text: string; isTrue?: boolean; customAnswer?: string }
+
+function checkCustom(answer: string, input: string): boolean {
+  const value = Number.parseFloat(input.trim().replace(',', '.'))
+  if (!Number.isFinite(value)) return false
+  const tol = answer.includes('.') ? 0.06 : 0
+  return Math.abs(value - Number(answer)) <= tol
+}
 type QuizResult = {
   item: string
   text: string
@@ -48,12 +56,14 @@ export default function Quiz({
   initialMode,
   initialCount,
   initialRecords,
+  customQuestions,
 }: {
   categoryId: string
   initialStats: ItemStats
   initialMode?: TestMode
   initialCount?: number
   initialRecords: RecordRow[]
+  customQuestions: { id: number; question: string; answer: string }[]
 }) {
   const cat = getCategory(categoryId)
 
@@ -105,8 +115,22 @@ export default function Quiz({
           return
         }
         qs = buildSpotQuestions(cat.spotPool)
-      } else if (mode === 'tricky' && cat.trickyQuestions) {
-        qs = cat.trickyQuestions()
+      } else if (mode === 'tricky') {
+        const customs: QuizQuestion[] = customQuestions.map((cq) => ({
+          item: `custom:${cq.id}`,
+          text: cq.question,
+          customAnswer: cq.answer,
+        }))
+        const builtin: QuizQuestion[] = cat.trickyQuestions
+          ? cat.trickyQuestions()
+          : cat.isTricky
+            ? cat.items.filter((item) => cat.isTricky!(item)).map((item) => ({ item, text: cat.question(item) }))
+            : []
+        qs = shuffle([...customs, ...builtin])
+        if (qs.length === 0) {
+          setMenuNote('No tricky questions yet — add your own with the yellow + button on the test card.')
+          return
+        }
       } else {
         const built = buildQuestions(cat, mode, statsRef.current, n)
         note = built.note
@@ -136,7 +160,7 @@ export default function Quiz({
       setNewRank(null)
       setPhase('quiz')
     },
-    [cat],
+    [cat, customQuestions],
   )
 
   useEffect(() => {
@@ -173,12 +197,12 @@ export default function Quiz({
         if (idx >= 0 && cat.quickLengths[idx]) start('quick', cat.quickLengths[idx])
       } else if (cat.disableQuick) {
         if (e.key === '1') start('full')
-        else if (e.key === '2' && (cat.isTricky || cat.trickyQuestions)) start('tricky')
+        else if (e.key === '2') start('tricky')
         else if (e.key === '3' && cat.spotPool) start('spot')
       } else {
         if (e.key === '1') start('full')
         else if (e.key === '2') start('quick')
-        else if (e.key === '3' && (cat.isTricky || cat.trickyQuestions)) start('tricky')
+        else if (e.key === '3') start('tricky')
         else if (e.key === '4' && cat.spotPool) start('spot')
       }
     }
@@ -211,6 +235,14 @@ export default function Quiz({
     flashTimerRef.current = setTimeout(() => advance(next), result.isCorrect ? FLASH_CORRECT_MS : FLASH_WRONG_MS)
   }
 
+  function expectedAnswer(q: QuizQuestion): string {
+    return q.customAnswer ?? answerText(cat!, q.item, q.text)
+  }
+
+  function isAnswerCorrect(q: QuizQuestion, typed: string): boolean {
+    return q.customAnswer !== undefined ? checkCustom(q.customAnswer, typed) : checkAnswer(cat!, q.item, typed, q.text)
+  }
+
   function submit(typed: string = input) {
     const q = questions[index]
     if (!q || flashActiveRef.current) return
@@ -218,9 +250,9 @@ export default function Quiz({
     recordResult({
       item: q.item,
       text: q.text,
-      correctAnswer: answerText(cat!, q.item, q.text),
+      correctAnswer: expectedAnswer(q),
       userAnswer: typed.trim(),
-      isCorrect: checkAnswer(cat!, q.item, typed, q.text),
+      isCorrect: isAnswerCorrect(q, typed),
       timeMs: Date.now() - questionStartRef.current,
     })
   }
@@ -234,8 +266,7 @@ export default function Quiz({
     }
     const q = questions[index]
     if (!cleaned || !q || flashActiveRef.current) return
-    const expected = answerText(cat!, q.item, q.text)
-    const complete = checkAnswer(cat!, q.item, cleaned, q.text) || cleaned.length >= expected.length
+    const complete = isAnswerCorrect(q, cleaned) || cleaned.length >= expectedAnswer(q).length
     if (complete) {
       autoTimerRef.current = setTimeout(() => {
         autoTimerRef.current = null
@@ -250,7 +281,7 @@ export default function Quiz({
     recordResult({
       item: q.item,
       text: q.text,
-      correctAnswer: answerText(cat!, q.item, q.text),
+      correctAnswer: expectedAnswer(q),
       userAnswer: null,
       isCorrect: false,
       timeMs: Date.now() - questionStartRef.current,
@@ -426,24 +457,26 @@ export default function Quiz({
                 <p className="mt-1 text-xs text-muted">{quickLength} random items. Fast daily drill.</p>
               </button>
             )}
-            {(cat.isTricky || cat.trickyQuestions) && (
-              <button
-                onClick={() => start('tricky')}
-                className="rounded-lg border border-warnbg bg-warnbg/40 p-4 text-left transition-colors hover:border-warnink"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-warnink">Tricky drill</span>
-                  <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">
-                    {cat.disableQuick ? '2' : '3'}
-                  </kbd>
-                </div>
-                <p className="mt-1 text-xs text-muted">
-                  {cat.trickyQuestions
-                    ? 'Exactly 20 traps — boundary sums, big tens, the 9s. Random every time.'
-                    : `Only the ${cat.items.filter(cat.isTricky!).length} tricky facts — the ones that catch you out.`}
-                </p>
-              </button>
-            )}
+            <button
+              onClick={() => start('tricky')}
+              className="rounded-lg border border-warnbg bg-warnbg/40 p-4 text-left transition-colors hover:border-warnink"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-warnink">Tricky drill</span>
+                <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">
+                  {cat.disableQuick ? '2' : '3'}
+                </kbd>
+              </div>
+              <p className="mt-1 text-xs text-muted">
+                {cat.trickyQuestions
+                  ? `${customQuestions.length} of yours + 20 generated traps — boundary sums, big tens, the 9s.`
+                  : cat.isTricky
+                    ? `${customQuestions.length} of yours + ${cat.items.filter(cat.isTricky!).length} built-in tricky facts.`
+                    : customQuestions.length > 0
+                      ? `Your ${customQuestions.length} custom questions.`
+                      : 'Empty — add your own with the yellow + on the test card.'}
+              </p>
+            </button>
             {cat.spotPool && (
               <button
                 onClick={() => start('spot')}

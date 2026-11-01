@@ -1,6 +1,6 @@
 import { and, avg, count, desc, eq, gte, ne, sql, sum } from 'drizzle-orm'
 import { getDb } from '@/db'
-import { answers, attempts, preferences } from '@/db/schema'
+import { answers, attempts, customQuestions, preferences } from '@/db/schema'
 import type { ItemStats } from './categories'
 
 export type DayRow = { date: string; tests: number; questions: number; correct: number }
@@ -200,6 +200,40 @@ export async function getTotalPracticeMs(userId: number): Promise<number> {
   } catch (err) {
     console.error('getTotalPracticeMs failed — run npm run db:push', err)
     return 0
+  }
+}
+
+export type CustomQuestion = { id: number; question: string; answer: string }
+
+export async function getCustomQuestions(userId: number, categoryId: string): Promise<CustomQuestion[]> {
+  try {
+    const rows = await getDb().then((db) =>
+      db
+        .select({ id: customQuestions.id, question: customQuestions.question, answer: customQuestions.answer })
+        .from(customQuestions)
+        .where(and(eq(customQuestions.userId, userId), eq(customQuestions.categoryId, categoryId))),
+    )
+    return rows
+  } catch (err) {
+    console.error('getCustomQuestions failed — run npm run db:push', err)
+    return []
+  }
+}
+
+export async function getCustomCounts(userId: number): Promise<Record<string, number>> {
+  try {
+    const rows = await getDb().then((db) =>
+      db
+        .select({ categoryId: customQuestions.categoryId, n: count() })
+        .from(customQuestions)
+        .where(eq(customQuestions.userId, userId))
+        .groupBy(customQuestions.categoryId),
+    )
+    const out: Record<string, number> = {}
+    for (const r of rows) out[r.categoryId] = Number(r.n)
+    return out
+  } catch {
+    return {}
   }
 }
 

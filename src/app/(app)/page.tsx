@@ -4,16 +4,17 @@ import TestGrid, { type CardVM } from '@/components/TestGrid'
 import { requireSession } from '@/lib/auth'
 import { QUICK_LENGTH, categories, masteryStats } from '@/lib/categories'
 import { fmtRatio } from '@/lib/format'
-import { getAllItemStats, getCategorySummaries, getPinnedOrder, getPracticeDays, getTotalPracticeMs } from '@/lib/queries'
+import { getAllItemStats, getCategorySummaries, getCustomCounts, getPinnedOrder, getPracticeDays, getTotalPracticeMs } from '@/lib/queries'
 
 export default async function HomePage() {
   const session = await requireSession()
-  const [days, summaries, allItemStats, pinnedOrder, totalMs] = await Promise.all([
+  const [days, summaries, allItemStats, pinnedOrder, totalMs, customCounts] = await Promise.all([
     getPracticeDays(session.userId),
     getCategorySummaries(session.userId),
     getAllItemStats(session.userId),
     getPinnedOrder(session.userId),
     getTotalPracticeMs(session.userId),
+    getCustomCounts(session.userId),
   ])
 
   const cards: CardVM[] = categories.map((cat) => {
@@ -34,6 +35,7 @@ export default async function HomePage() {
       singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max, noun: cat.singleTable.noun } : null,
       disableQuick: !!cat.disableQuick,
       hasSpot: !!cat.spotPool,
+      customCount: customCounts[cat.id] ?? 0,
     }
   })
 

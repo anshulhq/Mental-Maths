@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 export type CardVM = {
@@ -17,7 +18,10 @@ export type CardVM = {
   singleTable: { min: number; max: number; noun: string } | null
   disableQuick: boolean
   hasSpot: boolean
+  customCount: number
 }
+
+type CustomQ = { id: number; question: string; answer: string; createdAt: string }
 
 type DragInfo = { id: string; w: number; offX: number; offY: number }
 type Ghost = { id: string; x: number; y: number; w: number }
@@ -55,7 +59,15 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
   const [pinned, setPinned] = useState<string[]>(initialPinned.filter((id) => validIds.has(id)))
   const [ghost, setGhost] = useState<Ghost | null>(null)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const router = useRouter()
   const [openTable, setOpenTable] = useState<string | null>(null)
+  const [addFor, setAddFor] = useState<string | null>(null)
+  const [modalList, setModalList] = useState<CustomQ[]>([])
+  const [modalQuestion, setModalQuestion] = useState('')
+  const [modalAnswer, setModalAnswer] = useState('')
+  const [modalBusy, setModalBusy] = useState(false)
+  const [modalError, setModalError] = useState<string | null>(null)
+  const [modalAdded, setModalAdded] = useState(false)
   const dragRef = useRef<DragInfo | null>(null)
   const movedRef = useRef(false)
   const cleanupRef = useRef<(() => void) | null>(null)
@@ -83,6 +95,56 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
     } catch {
       setSaveState('error')
     }
+  }
+
+  function openAdd(id: string) {
+    setAddFor(id)
+    setModalQuestion('')
+    setModalAnswer('')
+    setModalError(null)
+    setModalAdded(false)
+    void fetch(`/api/questions?categoryId=${id}`)
+      .then((res) => (res.ok ? res.json() : { questions: [] }))
+      .then((data) => setModalList(data.questions ?? []))
+      .catch(() => setModalList([]))
+  }
+
+  function addQuestion() {
+    if (!addFor || modalBusy) return
+    setModalBusy(true)
+    setModalError(null)
+    void fetch('/api/questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categoryId: addFor, question: modalQuestion, answer: modalAnswer }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setModalError(data.error ?? 'Could not add')
+          return
+        }
+        setModalList((prev) => [data.question, ...prev])
+        setModalQuestion('')
+        setModalAnswer('')
+        setModalAdded(true)
+        setTimeout(() => setModalAdded(false), 1500)
+        router.refresh()
+      })
+      .catch(() => setModalError('Network error'))
+      .finally(() => setModalBusy(false))
+  }
+
+  function deleteQuestion(id: number) {
+    if (modalBusy) return
+    void fetch(`/api/questions/${id}`, { method: 'DELETE' })
+      .then((res) => {
+        if (res.ok) {
+          setModalList((prev) => prev.filter((q) => q.id !== id))
+          router.refresh()
+        }
+      })
+      .catch(() => {})
   }
 
   function togglePin(id: string) {
@@ -174,16 +236,29 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
               details →
             </Link>
             {interactive ? (
-              <button
-                onClick={() => togglePin(c.id)}
-                title={isPinned ? 'Unpin' : 'Pin to top'}
-                aria-label={isPinned ? 'Unpin' : 'Pin to top'}
-                className={`rounded-md p-1.5 transition-colors hover:bg-subtle ${
-                  isPinned ? 'text-accent' : 'text-faint hover:text-ink'
-                }`}
-              >
-                <PinIcon filled={isPinned} />
-              </button>
+              <>
+                <button
+                  onClick={() => openAdd(c.id)}
+                  title="Add your own tricky question"
+                  aria-label="Add your own tricky question"
+                  className="rounded-md border border-warnbg bg-warnbg/40 p-1.5 text-warnink transition-colors hover:bg-warnbg"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => togglePin(c.id)}
+                  title={isPinned ? 'Unpin' : 'Pin to top'}
+                  aria-label={isPinned ? 'Unpin' : 'Pin to top'}
+                  className={`rounded-md p-1.5 transition-colors hover:bg-subtle ${
+                    isPinned ? 'text-accent' : 'text-faint hover:text-ink'
+                  }`}
+                >
+                  <PinIcon filled={isPinned} />
+                </button>
+              </>
             ) : (
               <span className="p-1.5 text-accent">
                 <PinIcon filled={isPinned} />
@@ -223,7 +298,7 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
         ) : (
           <div
             className={`mt-4 grid gap-2 self-end text-xs sm:text-sm ${
-              1 + (c.disableQuick ? 0 : 1) + (c.trickyCount > 0 ? 1 : 0) + (c.singleTable ? 1 : 0) >= 4
+              1 + (c.disableQuick ? 0 : 1) + 1 + (c.singleTable ? 1 : 0) + (c.hasSpot ? 1 : 0) >= 4
                 ? 'grid-cols-2 sm:grid-cols-4'
                 : 'grid-cols-3'
             }`}
@@ -271,14 +346,12 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
                 )}
               </div>
             )}
-            {c.trickyCount > 0 && (
-              <Link
-                href={`/test/${c.id}?mode=tricky`}
-                className="rounded-lg border border-warnbg bg-warnbg px-2 py-2 text-center font-medium text-warnink transition-colors hover:border-warnink sm:px-3"
-              >
-                Tricky · {c.trickyCount}
-              </Link>
-            )}
+            <Link
+              href={`/test/${c.id}?mode=tricky`}
+              className="rounded-lg border border-warnbg bg-warnbg px-2 py-2 text-center font-medium text-warnink transition-colors hover:border-warnink sm:px-3"
+            >
+              Tricky · {c.trickyCount + c.customCount}
+            </Link>
             {c.hasSpot && (
               <Link
                 href={`/test/${c.id}?mode=spot`}
@@ -326,6 +399,78 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
         <h2 className="mb-3 text-sm font-semibold">{pinnedCards.length > 0 ? 'All tests' : 'Pick a test'}</h2>
         <div className="grid gap-4 sm:grid-cols-2">{otherCards.map((c) => renderCard(c, false))}</div>
       </section>
+      {addFor &&
+        (() => {
+          const target = cards.find((c) => c.id === addFor)
+          return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/50" onClick={() => setAddFor(null)} />
+              <div className="relative w-full max-w-sm rounded-xl border border-warnbg bg-surface p-5 shadow-2xl">
+                <div className="flex items-baseline justify-between">
+                  <h3 className="text-sm font-semibold text-warnink">Add tricky question</h3>
+                  <button onClick={() => setAddFor(null)} className="text-xs text-muted transition-colors hover:text-ink">
+                    close ✕
+                  </button>
+                </div>
+                <p className="mt-0.5 text-xs text-muted">{target?.name} — feeds its Tricky drill</p>
+
+                <div className="mt-4 space-y-2">
+                  <input
+                    value={modalQuestion}
+                    onChange={(e) => setModalQuestion(e.target.value)}
+                    placeholder="question — e.g. 17 + 6 or √144"
+                    maxLength={60}
+                    className="w-full rounded-lg border border-strong bg-transparent px-3 py-2 text-sm outline-none focus:border-ink"
+                  />
+                  <input
+                    value={modalAnswer}
+                    onChange={(e) => setModalAnswer(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1'))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') addQuestion()
+                    }}
+                    placeholder="answer — e.g. 23"
+                    inputMode="decimal"
+                    maxLength={12}
+                    className="w-full rounded-lg border border-strong bg-transparent px-3 py-2 text-sm outline-none focus:border-ink"
+                  />
+                  {modalError && <p className="text-xs text-bad">{modalError}</p>}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={addQuestion}
+                      disabled={modalBusy || modalQuestion.trim() === '' || modalAnswer.trim() === ''}
+                      className="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-onprimary transition-opacity hover:opacity-90 disabled:opacity-40"
+                    >
+                      {modalBusy ? 'Adding…' : 'Add question'}
+                    </button>
+                    {modalAdded && <span className="text-xs text-accent">added ✓</span>}
+                    <span className="ml-auto text-xs text-faint">{modalList.length} saved</span>
+                  </div>
+                </div>
+
+                {modalList.length > 0 && (
+                  <div className="mt-4 max-h-48 space-y-1 overflow-y-auto border-t border-border pt-3">
+                    {modalList.map((q) => (
+                      <div key={q.id} className="flex items-center gap-2 rounded-md px-1.5 py-1 text-sm hover:bg-subtle">
+                        <span className="min-w-0 flex-1 truncate font-mono">{q.question}</span>
+                        <span className="font-mono font-medium">= {q.answer}</span>
+                        <button
+                          onClick={() => deleteQuestion(q.id)}
+                          aria-label="Delete question"
+                          className="shrink-0 rounded p-1 text-faint transition-colors hover:bg-badbg hover:text-badink"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
       {ghost &&
         (() => {
           const c = cards.find((x) => x.id === ghost.id)

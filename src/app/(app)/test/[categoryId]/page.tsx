@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Quiz from '@/components/Quiz'
 import { requireSession } from '@/lib/auth'
 import { getCategory, type ItemStat, type TestMode } from '@/lib/categories'
-import { getItemStatsForCategory, getRecords } from '@/lib/queries'
+import { getItemStatsForCategory, getCustomQuestions, getRecords } from '@/lib/queries'
 
 function cellClass(stat: ItemStat | undefined): string {
   if (!stat || stat.attempts === 0) return 'bg-subtle text-faint'
@@ -28,9 +28,10 @@ export default async function TestPage(props: PageProps<'/test/[categoryId]'>) {
   const initialCount = Number.isInteger(nParam) && nParam >= 1 && nParam <= 1000 ? nParam : undefined
 
   const session = await requireSession()
-  const [itemStats, records] = await Promise.all([
+  const [itemStats, records, customQuestions] = await Promise.all([
     getItemStatsForCategory(session.userId, cat.id),
     getRecords(session.userId, cat.id),
+    getCustomQuestions(session.userId, cat.id),
   ])
 
   const compact = cat.items.length > 60
@@ -43,6 +44,7 @@ export default async function TestPage(props: PageProps<'/test/[categoryId]'>) {
         initialMode={initialMode}
         initialCount={initialCount}
         initialRecords={records}
+        customQuestions={customQuestions}
       />
 
       <section className="rounded-xl border border-border bg-surface p-6">

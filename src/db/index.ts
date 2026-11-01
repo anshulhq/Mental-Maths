@@ -50,6 +50,15 @@ create table if not exists notes (
   updated_at timestamptz not null default now()
 );
 create index if not exists notes_user_idx on notes (user_id);
+create table if not exists custom_questions (
+  id serial primary key,
+  user_id integer not null references users(id) on delete cascade,
+  category_id text not null,
+  question text not null,
+  answer text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists custom_questions_user_category_idx on custom_questions (user_id, category_id);
 `
 
 async function initDb(): Promise<Db> {
