@@ -206,6 +206,20 @@ export async function getTotalPracticeMs(userId: number): Promise<number> {
 export async function ensureTrickySeeded(userId: number, categoryId?: string): Promise<void> {
   try {
     const db = await getDb()
+    const markers = await db.select().from(trickySeeded).where(eq(trickySeeded.userId, userId))
+    for (const m of markers) {
+      const cat = categories.find((c) => c.id === m.categoryId)
+      if (!cat?.builtinTricky) {
+        await db
+          .delete(customQuestions)
+          .where(
+            and(eq(customQuestions.userId, userId), eq(customQuestions.categoryId, m.categoryId), eq(customQuestions.builtin, true)),
+          )
+        await db
+          .delete(trickySeeded)
+          .where(and(eq(trickySeeded.userId, userId), eq(trickySeeded.categoryId, m.categoryId)))
+      }
+    }
     const cats = categories.filter((c) => c.builtinTricky && (!categoryId || c.id === categoryId))
     for (const cat of cats) {
       const marker = await db
@@ -226,6 +240,17 @@ export async function ensureTrickySeeded(userId: number, categoryId?: string): P
     }
   } catch (err) {
     console.error('ensureTrickySeeded failed — run npm run db:push', err)
+  }
+}
+
+export async function resetTrickyRecords(userId: number, categoryId: string): Promise<void> {
+  try {
+    const db = await getDb()
+    await db
+      .delete(attempts)
+      .where(and(eq(attempts.userId, userId), eq(attempts.categoryId, categoryId), eq(attempts.mode, 'tricky')))
+  } catch (err) {
+    console.error('resetTrickyRecords failed', err)
   }
 }
 

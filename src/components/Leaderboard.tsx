@@ -7,7 +7,7 @@ const MEDAL_CLASSES = [
   'bg-gradient-to-br from-orange-200 via-amber-600 to-amber-800 text-orange-50 ring-amber-800/40',
 ]
 
-const MODE_ORDER = ['full', 'single', 'quick', 'tricky', 'spot']
+const MODE_ORDER = ['full', 'single', 'quick', 'tricky', 'trap', 'spot']
 
 const TrophyIcon = (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -24,6 +24,7 @@ function groupLabel(mode: string, variant: number | null, disableFull: boolean, 
   if (mode === 'full') return 'Full test'
   if (mode === 'tricky') return 'Tricky drill'
   if (mode === 'spot') return 'Spot the error'
+  if (mode === 'trap') return 'Trap 20'
   if (mode === 'single') return `${singleNoun} ${variant ?? ''}`
   return disableFull ? `Random ${variant ?? ''}` : 'Quick test'
 }

@@ -5,6 +5,7 @@ import { getDb } from '@/db'
 import { customQuestions } from '@/db/schema'
 import { getSession } from '@/lib/auth'
 import { getCategory } from '@/lib/categories'
+import { resetTrickyRecords } from '@/lib/queries'
 
 const addSchema = z.object({
   categoryId: z.string().min(1),
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
         .values({ userId: session.userId, categoryId, question, answer: answer.replace(',', '.') })
         .returning(),
     )
+    await resetTrickyRecords(session.userId, categoryId)
     return NextResponse.json({ question: serialize(inserted[0]) })
   } catch (err) {
     console.error('Failed to add custom question', err)

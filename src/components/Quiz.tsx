@@ -45,6 +45,7 @@ function modeLabel(mode: TestMode, count: number, disableFull?: boolean, singleN
   if (mode === 'full') return 'Full test'
   if (mode === 'tricky') return 'Tricky drill'
   if (mode === 'spot') return 'Spot the error'
+  if (mode === 'trap') return 'Trap 20'
   if (mode === 'single') return `${singleNoun} ${count}`
   return disableFull ? `Random ${count}` : 'Quick test'
 }
@@ -114,6 +115,12 @@ export default function Quiz({
           return
         }
         qs = buildSpotQuestions(cat.spotPool)
+      } else if (mode === 'trap') {
+        if (!cat.trapQuestions) {
+          setMenuNote('No trap bank for this test.')
+          return
+        }
+        qs = cat.trapQuestions().map((g) => ({ item: g.item, text: g.text }))
       } else if (mode === 'tricky') {
         qs = customQuestions.map((cq) => ({
           item: `custom:${cq.id}`,
@@ -191,8 +198,13 @@ export default function Quiz({
         else if (e.key === '2') start('tricky')
       } else if (cat.disableQuick) {
         if (e.key === '1') start('full')
-        else if (e.key === '2') start('tricky')
-        else if (e.key === '3' && cat.spotPool) start('spot')
+        else if (cat.trapQuestions) {
+          if (e.key === '2') start('trap')
+          else if (e.key === '3') start('tricky')
+        } else {
+          if (e.key === '2') start('tricky')
+          else if (e.key === '3' && cat.spotPool) start('spot')
+        }
       } else {
         if (e.key === '1') start('full')
         else if (e.key === '2') start('quick')
@@ -465,6 +477,18 @@ export default function Quiz({
                 <p className="mt-1 text-xs text-muted">{quickLength} random items. Fast daily drill.</p>
               </button>
             )}
+            {cat.trapQuestions && (
+              <button
+                onClick={() => start('trap')}
+                className="rounded-lg border border-warnbg bg-warnbg/40 p-4 text-left transition-colors hover:border-warnink"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-warnink">Trap 20</span>
+                  <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">2</kbd>
+                </div>
+                <p className="mt-1 text-xs text-muted">A fresh set of 20 every run — boundary sums, big tens, the 9s.</p>
+              </button>
+            )}
             <button
               onClick={() => start('tricky')}
               className="rounded-lg border border-warnbg bg-warnbg/40 p-4 text-left transition-colors hover:border-warnink"
@@ -472,7 +496,7 @@ export default function Quiz({
               <div className="flex items-center justify-between">
                 <span className="font-medium text-warnink">Tricky drill</span>
                 <kbd className="rounded border border-warnbg bg-surface px-1.5 py-0.5 text-[10px] text-muted">
-                  {cat.disableQuick ? '2' : '3'}
+                  {cat.disableQuick ? (cat.trapQuestions ? '3' : '2') : '3'}
                 </kbd>
               </div>
               <p className="mt-1 text-xs text-muted">

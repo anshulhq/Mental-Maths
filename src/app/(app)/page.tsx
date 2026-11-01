@@ -35,6 +35,7 @@ export default async function HomePage() {
       singleTable: cat.singleTable ? { min: cat.singleTable.min, max: cat.singleTable.max, noun: cat.singleTable.noun } : null,
       disableQuick: !!cat.disableQuick,
       hasSpot: !!cat.spotPool,
+      hasTrap: !!cat.trapQuestions,
       hasBuiltinTricky: !!cat.builtinTricky,
       customCount: customCounts[cat.id] ?? 0,
     }

@@ -17,6 +17,7 @@ export type CardVM = {
   singleTable: { min: number; max: number; noun: string } | null
   disableQuick: boolean
   hasSpot: boolean
+  hasTrap: boolean
   hasBuiltinTricky: boolean
   customCount: number
 }
@@ -286,6 +287,14 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
             >
               Random · {c.lengths[0]}
             </Link>
+            {c.hasTrap && (
+              <Link
+                href={`/test/${c.id}?mode=trap`}
+                className="rounded-lg border border-strong px-2 py-2 text-center font-medium transition-colors hover:border-ink sm:px-3"
+              >
+                Trap 20
+              </Link>
+            )}
             <Link
               href={`/test/${c.id}?mode=tricky`}
               className="rounded-lg border border-warnbg bg-warnbg px-2 py-2 text-center font-medium text-warnink transition-colors hover:border-warnink sm:px-3"
@@ -296,7 +305,7 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
         ) : (
           <div
             className={`mt-4 grid gap-2 self-end text-xs sm:text-sm ${
-              1 + (c.disableQuick ? 0 : 1) + 1 + (c.singleTable ? 1 : 0) + (c.hasSpot ? 1 : 0) >= 4
+              1 + (c.disableQuick ? 0 : 1) + 1 + (c.singleTable ? 1 : 0) + (c.hasSpot ? 1 : 0) + (c.hasTrap ? 1 : 0) >= 4
                 ? 'grid-cols-2 sm:grid-cols-4'
                 : 'grid-cols-3'
             }`}
@@ -343,6 +352,14 @@ export default function TestGrid({ cards, initialPinned }: { cards: CardVM[]; in
                   </>
                 )}
               </div>
+            )}
+            {c.hasTrap && (
+              <Link
+                href={`/test/${c.id}?mode=trap`}
+                className="rounded-lg border border-strong px-2 py-2 text-center font-medium transition-colors hover:border-ink sm:px-3"
+              >
+                Trap 20
+              </Link>
             )}
             <Link
               href={`/test/${c.id}?mode=tricky`}

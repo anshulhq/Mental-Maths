@@ -5,6 +5,7 @@ import { getDb } from '@/db'
 import { customQuestions } from '@/db/schema'
 import { getSession } from '@/lib/auth'
 import { getCategory } from '@/lib/categories'
+import { resetTrickyRecords } from '@/lib/queries'
 
 const bodySchema = z.object({ categoryId: z.string().min(1) })
 
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
       builtin: true,
     }))
     await db.insert(customQuestions).values(rows)
+    await resetTrickyRecords(session.userId, cat.id)
     return NextResponse.json({ ok: true, restored: rows.length })
   } catch (err) {
     console.error('Failed to restore built-ins', err)

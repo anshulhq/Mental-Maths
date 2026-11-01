@@ -1,4 +1,4 @@
-export type TestMode = 'full' | 'quick' | 'tricky' | 'single' | 'spot'
+export type TestMode = 'full' | 'quick' | 'tricky' | 'single' | 'spot' | 'trap'
 
 export type ItemStat = { attempts: number; correct: number }
 export type ItemStats = Record<string, ItemStat>
@@ -21,6 +21,7 @@ export type CategoryDef = {
   spotPool?: readonly string[]
   dynamicItems?: boolean
   builtinTricky?: () => { question: string; answer: string }[]
+  trapQuestions?: () => { item: string; text: string }[]
 }
 
 export const QUICK_LENGTH = 20
@@ -244,11 +245,7 @@ const carryAdd22: CategoryDef = {
   },
   tolerance: 0,
   disableQuick: true,
-  builtinTricky: () =>
-    buildCarryTricky20().map((g) => {
-      const [a, b] = g.item.split('+').map(Number)
-      return { question: g.text, answer: String(a + b) }
-    }),
+  trapQuestions: buildCarryTricky20,
   dynamicItems: true,
 }
 
