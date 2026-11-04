@@ -12,6 +12,7 @@ import {
   buildSpotQuestions,
   checkAnswer,
   getCategory,
+  shuffle,
   type ItemStats,
   type TestMode,
 } from '@/lib/categories'
@@ -122,11 +123,13 @@ export default function Quiz({
         }
         qs = cat.trapQuestions().map((g) => ({ item: g.item, text: g.text }))
       } else if (mode === 'tricky') {
-        qs = customQuestions.map((cq) => ({
-          item: `custom:${cq.id}`,
-          text: cq.question,
-          customAnswer: cq.answer,
-        }))
+        qs = shuffle(
+          customQuestions.map((cq) => ({
+            item: `custom:${cq.id}`,
+            text: cq.question,
+            customAnswer: cq.answer,
+          })),
+        )
         if (qs.length === 0) {
           setMenuNote('No tricky questions yet — add your own with the yellow + button on the test card.')
           return
